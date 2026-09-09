@@ -170,7 +170,7 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
 class _JornadaBottomsheetContent extends ConsumerWidget {
   final Jornada jornada;
 
-  const _JornadaBottomsheetContent({super.key, required this.jornada});
+  const _JornadaBottomsheetContent({required this.jornada});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -240,7 +240,7 @@ class _JornadaBottomsheetContent extends ConsumerWidget {
               );
             },
             loading: () => const Text('Cargando inscritos...'),
-            error: (_, __) => const Text('Inscritos: --'),
+            error: (err, st) => const Text('Inscritos: --'),
           ),
           const SizedBox(height: 24),
 
@@ -272,7 +272,7 @@ class _JornadaBottomsheetContent extends ConsumerWidget {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const Text('Error al verificar inscripción'),
+              error: (err, st) => const Text('Error al verificar inscripción'),
             ),
           ] else ...[
             const Text(

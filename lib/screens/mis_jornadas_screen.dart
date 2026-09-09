@@ -89,7 +89,6 @@ class _JornadaItemCard extends ConsumerWidget {
   final String userId;
 
   const _JornadaItemCard({
-    super.key,
     required this.jornada,
     required this.esInscritoTab,
     required this.userId,
