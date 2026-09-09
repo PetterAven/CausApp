@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'controllers/auth_controller.dart';
 import 'screens/login_screen.dart';
-import 'screens/home_placeholder_screen.dart';
+import 'screens/home_shell.dart';
 
 Future<void> main() async {
   // Aseguramos que los bindings de Flutter estén inicializados antes de usar plugins
@@ -44,7 +44,7 @@ class CausApp extends ConsumerWidget {
           // Si no hay sesión, mostramos LoginScreen
           final session = state.session;
           if (session != null) {
-            return const HomePlaceholderScreen();
+            return const HomeShell();
           } else {
             return const LoginScreen();
           }
