@@ -5,7 +5,7 @@ import '../controllers/inscripcion_controller.dart';
 import '../models/jornada.dart';
 
 class MisJornadasScreen extends ConsumerWidget {
-  const MisJornadasScreen({Key? key}) : super(key: key);
+  const MisJornadasScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -89,11 +89,11 @@ class _JornadaItemCard extends ConsumerWidget {
   final String userId;
 
   const _JornadaItemCard({
-    Key? key,
+    super.key,
     required this.jornada,
     required this.esInscritoTab,
     required this.userId,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

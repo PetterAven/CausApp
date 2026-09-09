@@ -8,7 +8,7 @@ import '../controllers/inscripcion_controller.dart';
 import '../models/jornada.dart';
 
 class MapaJornadasScreen extends ConsumerStatefulWidget {
-  const MapaJornadasScreen({Key? key}) : super(key: key);
+  const MapaJornadasScreen({super.key});
 
   @override
   ConsumerState<MapaJornadasScreen> createState() => _MapaJornadasScreenState();
@@ -170,7 +170,7 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
 class _JornadaBottomsheetContent extends ConsumerWidget {
   final Jornada jornada;
 
-  const _JornadaBottomsheetContent({Key? key, required this.jornada}) : super(key: key);
+  const _JornadaBottomsheetContent({super.key, required this.jornada});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

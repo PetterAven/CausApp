@@ -6,7 +6,7 @@ import 'perfil_screen.dart';
 import 'crear_jornada_screen.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
-  const HomeShell({Key? key}) : super(key: key);
+  const HomeShell({super.key});
 
   @override
   ConsumerState<HomeShell> createState() => _HomeShellState();

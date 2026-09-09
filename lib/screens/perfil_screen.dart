@@ -4,7 +4,7 @@ import '../controllers/auth_controller.dart';
 import 'crear_jornada_screen.dart';
 
 class PerfilScreen extends ConsumerWidget {
-  const PerfilScreen({Key? key}) : super(key: key);
+  const PerfilScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -6,7 +6,7 @@ import '../controllers/auth_controller.dart';
 import '../controllers/jornada_controller.dart';
 
 class CrearJornadaScreen extends ConsumerStatefulWidget {
-  const CrearJornadaScreen({Key? key}) : super(key: key);
+  const CrearJornadaScreen({super.key});
 
   @override
   ConsumerState<CrearJornadaScreen> createState() => _CrearJornadaScreenState();
@@ -227,7 +227,7 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
 
               // Dropdown de Categoría
               DropdownButtonFormField<String>(
-                value: _categoriaSeleccionada,
+                initialValue: _categoriaSeleccionada,
                 decoration: const InputDecoration(
                   labelText: 'Categoría',
                   border: OutlineInputBorder(),
