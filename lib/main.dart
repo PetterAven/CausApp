@@ -2,22 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'controllers/auth_controller.dart';
-import 'screens/auth_screen.dart';
-import 'screens/home_shell.dart';
+import 'screens/login_screen.dart';
+import 'screens/home_placeholder_screen.dart';
 
 Future<void> main() async {
-  // Asegurar que los bindings de Flutter estén inicializados
+  // Aseguramos que los bindings de Flutter estén inicializados antes de usar plugins
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializar Supabase con tus credenciales de proyecto
-  // Reemplaza con tu URL y Anon Key de Supabase
+  // 1. Configuración de Supabase.initialize() con tu URL y Publishable Key reales
   await Supabase.initialize(
-    url: 'https://tu-proyecto.supabase.co',
-    publishableKey: 'tu-anon-key',
+    url: 'https://hisifcteaatneevrjvov.supabase.co',
+    publishableKey: 'sb_publishable_-ycdBKUc7LuIxzyhVdIE9g_MvUbIblZ',
   );
 
   runApp(
-    // ProviderScope es necesario para que Riverpod funcione en toda la aplicación
+    // ProviderScope es obligatorio en la raíz para que Riverpod funcione
     const ProviderScope(
       child: CausApp(),
     ),
@@ -29,7 +28,7 @@ class CausApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Escuchamos el estado de autenticación con Riverpod
+    // 5. Escuchamos authStateProvider para determinar si hay sesión activa
     final authState = ref.watch(authStateProvider);
 
     return MaterialApp(
@@ -41,20 +40,26 @@ class CausApp extends ConsumerWidget {
       ),
       home: authState.when(
         data: (state) {
-          // Si el usuario está autenticado, mostramos el HomeShell (pantalla principal)
-          // Si no, mostramos la pantalla de autenticación (Login / Registro)
+          // Si hay sesión activa (state.session != null), mostramos HomePlaceholderScreen
+          // Si no hay sesión, mostramos LoginScreen
           final session = state.session;
           if (session != null) {
-            return const HomeShell();
+            return const HomePlaceholderScreen();
           } else {
-            return const AuthScreen();
+            return const LoginScreen();
           }
         },
+        // Indicador de carga mientras se verifica el estado inicial de la sesión
         loading: () => const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
+          body: Center(
+            child: CircularProgressIndicator(color: Colors.green),
+          ),
         ),
-        error: (e, st) => Scaffold(
-          body: Center(child: Text('Error de autenticación: $e')),
+        // Manejo de error en caso de fallo al obtener el estado de autenticación
+        error: (error, stackTrace) => Scaffold(
+          body: Center(
+            child: Text('Error al cargar la autenticación: $error'),
+          ),
         ),
       ),
     );
