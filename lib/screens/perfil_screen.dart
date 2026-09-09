@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/auth_controller.dart';
+import 'crear_jornada_screen.dart';
 
 class PerfilScreen extends ConsumerWidget {
   const PerfilScreen({Key? key}) : super(key: key);
@@ -38,6 +39,22 @@ class PerfilScreen extends ConsumerWidget {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 40),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CrearJornadaScreen()),
+                );
+              },
+              icon: const Icon(Icons.add_circle_outline),
+              label: const Text('Crear nueva jornada'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () async {
                 try {
