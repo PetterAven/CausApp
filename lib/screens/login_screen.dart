@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/auth_controller.dart';
 
-// ConsumerStatefulWidget nos permite mantener estado local (inputs, loading, modo login/registro)
-// y a la vez escuchar/leer providers de Riverpod usando `ref`.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -12,25 +10,18 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  // Controladores para capturar el texto de los inputs de email y contraseña
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
-  // Bandera para saber si estamos en modo Login (true) o Registro (false)
   bool _isLoginMode = true;
-  
-  // Bandera para mostrar el indicador de carga (loading)
   bool _isLoading = false;
 
   @override
   void dispose() {
-    // Es importante liberar los controladores cuando el widget se destruye
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  // Método para manejar el envío del formulario (Iniciar sesión o Registrarse)
   Future<void> _submit() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -42,43 +33,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final authController = ref.read(authControllerProvider);
-
       if (_isLoginMode) {
-        // Lógica de inicio de sesión
         await authController.signIn(email: email, password: password);
       } else {
-        // Lógica de registro
         await authController.signUp(email: email, password: password);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('¡Cuenta creada con éxito! Ya puedes iniciar sesión.')),
           );
-          setState(() {
-            _isLoginMode = true; // Cambiar a vista de login tras registrarse
-          });
+          setState(() => _isLoginMode = true);
         }
       }
     } catch (e) {
-      // Manejo de errores mostrando un SnackBar como se solicitó
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString()),
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -86,87 +68,139 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isLoginMode ? 'Iniciar Sesión - CausApp' : 'Crear Cuenta - CausApp'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
+      backgroundColor: Colors.grey.shade50,
+      body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Icono decorativo de la app
-                const Icon(
-                  Icons.volunteer_activism,
-                  size: 80,
-                  color: Colors.green,
-                ),
-                const SizedBox(height: 24),
-                
-                // Campo de texto para el Correo electrónico
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Correo electrónico',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
+                Container(
+                  alignment: Alignment.center,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.volunteer_activism,
+                      size: 64,
+                      color: Colors.green.shade700,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Campo de texto para la Contraseña
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true, // Ocultar caracteres de la contraseña
-                  decoration: const InputDecoration(
-                    labelText: 'Contraseña',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                Text(
+                  'CausApp',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade800,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 24),
-
-                // Botón principal (Iniciar sesión o Registrarse)
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
+                const SizedBox(height: 8),
+                Text(
+                  _isLoginMode
+                      ? '¡Bienvenido! Inicia sesión para continuar.'
+                      : 'Únete y sé parte del cambio comunitario.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 32),
+                Card(
+                  elevation: 3,
+                  shadowColor: Colors.black12,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: 'Correo electrónico',
+                            prefixIcon: Icon(Icons.email_outlined, color: Colors.green.shade700),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
                           ),
-                        )
-                      : Text(
-                          _isLoginMode ? 'Iniciar sesión' : 'Crear cuenta',
-                          style: const TextStyle(fontSize: 16),
                         ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _passwordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: 'Contraseña',
+                            prefixIcon: Icon(Icons.lock_outline, color: Colors.green.shade700),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green.shade700,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Text(
+                                    _isLoginMode ? 'Iniciar sesión' : 'Crear cuenta',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 16),
-
-                // Botón/link para alternar entre iniciar sesión y crear cuenta
+                const SizedBox(height: 24),
                 TextButton(
                   onPressed: () {
-                    setState(() {
-                      _isLoginMode = !_isLoginMode;
-                    });
+                    setState(() => _isLoginMode = !_isLoginMode);
                   },
                   child: Text(
                     _isLoginMode
-                        ? '¿No tienes cuenta? Crear cuenta'
-                        : '¿Ya tienes cuenta? Iniciar sesión',
-                    style: const TextStyle(color: Colors.green),
+                        ? '¿No tienes cuenta? Regístrate aquí'
+                        : '¿Ya tienes cuenta? Inicia sesión',
+                    style: TextStyle(
+                      color: Colors.green.shade800,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ],
