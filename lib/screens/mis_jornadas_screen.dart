@@ -12,8 +12,24 @@ class MisJornadasScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
 
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text('Inicia sesión para ver tus jornadas.')),
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.lock_outline, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text(
+                  'Inicia sesión para ver tus jornadas.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
 
@@ -25,12 +41,13 @@ class MisJornadasScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Mis Jornadas'),
-          backgroundColor: Colors.green,
+          backgroundColor: const Color(0xFF2E7D32),
           foregroundColor: Colors.white,
           bottom: const TabBar(
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
+            indicatorWeight: 3,
             tabs: [
               Tab(text: 'Inscrito'),
               Tab(text: 'Organizadas'),
@@ -43,7 +60,23 @@ class MisJornadasScreen extends ConsumerWidget {
             inscritasAsync.when(
               data: (jornadas) {
                 if (jornadas.isEmpty) {
-                  return const Center(child: Text('No estás inscrito en ninguna jornada aún.'));
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.volunteer_activism_outlined, size: 64, color: Colors.grey.shade400),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No estás inscrito en ninguna jornada aún.\n¡Explora el mapa y apúntate a una causa!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey, fontSize: 15, height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 }
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -54,15 +87,31 @@ class MisJornadasScreen extends ConsumerWidget {
                   },
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32))),
+              error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.red))),
             ),
 
             // Pestaña 2: Jornadas organizadas
             organizadasAsync.when(
               data: (jornadas) {
                 if (jornadas.isEmpty) {
-                  return const Center(child: Text('No has organizado ninguna jornada aún.'));
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.event_note_outlined, size: 64, color: Colors.grey.shade400),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No has organizado ninguna jornada aún.\n¡Crea una y lidera el cambio comunitario!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey, fontSize: 15, height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 }
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -73,8 +122,8 @@ class MisJornadasScreen extends ConsumerWidget {
                   },
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32))),
+              error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.red))),
             ),
           ],
         ),
@@ -97,9 +146,9 @@ class _JornadaItemCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Card(
-      elevation: 3,
+      elevation: 2,
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -113,41 +162,63 @@ class _JornadaItemCard extends ConsumerWidget {
                     jornada.categoria == 'Otro' && jornada.categoriaPersonalizada != null
                         ? jornada.categoriaPersonalizada!
                         : jornada.categoria,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                   ),
-                  backgroundColor: Colors.green,
+                  backgroundColor: const Color(0xFF2E7D32),
                   padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
                 ),
-                Text(
-                  '${jornada.fecha} • ${jornada.hora}',
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today, size: 12, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${jornada.fecha} • ${jornada.hora}',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               jornada.titulo,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               jornada.descripcion,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.black54),
+              style: const TextStyle(color: Colors.black54, fontSize: 14),
             ),
             const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                const Icon(Icons.place_outlined, size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    jornada.direccionReferencia,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ),
                 if (esInscritoTab)
                   TextButton.icon(
                     onPressed: () async {
                       await ref.read(inscripcionControllerProvider.notifier).cancelarInscripcion(jornada.id, userId);
                       ref.invalidate(jornadasInscritasProvider(userId));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Inscripción cancelada')),
+                        );
+                      }
                     },
-                    icon: const Icon(Icons.cancel, color: Colors.red),
-                    label: const Text('Cancelar inscripción', style: TextStyle(color: Colors.red)),
+                    icon: const Icon(Icons.cancel_outlined, size: 18, color: Colors.red),
+                    label: const Text('Cancelar', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                   ),
               ],
             ),

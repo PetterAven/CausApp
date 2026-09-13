@@ -1,22 +1,42 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/jornada.dart';
+import '../local_db/app_database.dart';
 
 class InscripcionRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
+  final AppDatabase _db;
 
-  // Inscribir al usuario actual en una jornada
+  InscripcionRepository(this._db);
+
+  // Inscribir al usuario actual en una jornada (soporte offline)
   Future<void> inscribirse(String jornadaId, String voluntarioId) async {
     try {
-      await _supabase.from('inscripciones').insert({
+      final response = await _supabase.from('inscripciones').insert({
         'jornada_id': jornadaId,
         'voluntario_id': voluntarioId,
-      });
+      }).select('id').single();
+
+      final serverId = response['id'].toString();
+
+      await _db.guardarInscripcionLocal(
+        id: serverId,
+        jornadaId: jornadaId,
+        voluntarioId: voluntarioId,
+        createdAt: DateTime.now(),
+        pendingSync: false,
+      );
     } catch (e) {
-      throw 'Error al inscribirse en la jornada: ${e.toString()}';
+      // Guardar en cola local para sincronización posterior
+      await _db.guardarInscripcionLocal(
+        jornadaId: jornadaId,
+        voluntarioId: voluntarioId,
+        createdAt: DateTime.now(),
+        pendingSync: true,
+      );
     }
   }
 
-  // Cancelar inscripción
+  // Cancelar inscripción (soporte offline)
   Future<void> cancelarInscripcion(String jornadaId, String voluntarioId) async {
     try {
       await _supabase
@@ -24,8 +44,10 @@ class InscripcionRepository {
           .delete()
           .eq('jornada_id', jornadaId)
           .eq('voluntario_id', voluntarioId);
+
+      await _db.eliminarInscripcionDefinitiva(jornadaId, voluntarioId);
     } catch (e) {
-      throw 'Error al cancelar la inscripción: ${e.toString()}';
+      await _db.eliminarInscripcionLocal(jornadaId, voluntarioId);
     }
   }
 
@@ -52,9 +74,22 @@ class InscripcionRepository {
           .eq('jornada_id', jornadaId)
           .eq('voluntario_id', voluntarioId);
       
-      return (response as List).isNotEmpty;
+      if ((response as List).isNotEmpty) {
+        await _db.guardarInscripcionLocal(
+          id: response[0]['id'].toString(),
+          jornadaId: jornadaId,
+          voluntarioId: voluntarioId,
+          createdAt: DateTime.now(),
+          pendingSync: false,
+        );
+        return true;
+      }
+
+      final local = await _db.obtenerInscripcionesLocal(voluntarioId);
+      return local.any((i) => i.jornadaId == jornadaId && !i.isDeleted);
     } catch (e) {
-      return false;
+      final local = await _db.obtenerInscripcionesLocal(voluntarioId);
+      return local.any((i) => i.jornadaId == jornadaId && !i.isDeleted);
     }
   }
 
@@ -70,12 +105,39 @@ class InscripcionRepository {
       List<Jornada> jornadas = [];
       for (var item in data) {
         if (item['jornadas'] != null) {
-          jornadas.add(Jornada.fromJson(item['jornadas'] as Map<String, dynamic>));
+          final j = Jornada.fromJson(item['jornadas'] as Map<String, dynamic>);
+          jornadas.add(j);
+          await _db.upsertJornada(j);
         }
       }
       return jornadas;
     } catch (e) {
-      throw 'Error al cargar jornadas inscritas: ${e.toString()}';
+      final localInscripciones = await _db.obtenerInscripcionesLocal(voluntarioId);
+      final jornadaIds = localInscripciones.where((i) => !i.isDeleted).map((i) => i.jornadaId).toList();
+      
+      final allLocalJornadas = await _db.obtenerJornadasLocal();
+      List<Jornada> jornadas = [];
+      for (var row in allLocalJornadas) {
+        if (jornadaIds.contains(row.id)) {
+          jornadas.add(Jornada(
+            id: row.id,
+            organizadorId: row.organizadorId,
+            titulo: row.titulo,
+            categoria: row.categoria,
+            categoriaPersonalizada: row.categoriaPersonalizada,
+            descripcion: row.descripcion ?? '',
+            fecha: row.fecha,
+            hora: row.hora,
+            latitud: row.latitud,
+            longitud: row.longitud,
+            direccionReferencia: row.direccionReferencia ?? '',
+            cupoVoluntarios: row.cupoVoluntarios,
+            estado: row.estado,
+            createdAt: row.createdAt,
+          ));
+        }
+      }
+      return jornadas;
     }
   }
 }

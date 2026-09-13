@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,7 +12,7 @@ final currentUserProvider = Provider<User?>((ref) {
   return Supabase.instance.client.auth.currentUser;
 });
 
-// Controlador que agrupa las acciones de autenticación (Login, Registro, Logout)
+// Controlador que agrupa las acciones de autenticación (Login, Registro, Logout, Perfil)
 class AuthController {
   final SupabaseClient _supabase = Supabase.instance.client;
 
@@ -36,6 +37,49 @@ class AuthController {
       );
     } catch (e) {
       throw 'El correo ya existe o la contraseña es muy débil.';
+    }
+  }
+
+  // Actualizar perfil (nombre de usuario y/o avatar)
+  Future<void> updateProfile({String? username, String? avatarUrl}) async {
+    try {
+      final Map<String, dynamic> data = {};
+      if (username != null) data['username'] = username;
+      if (avatarUrl != null) data['avatar_url'] = avatarUrl;
+
+      await _supabase.auth.updateUser(
+        UserAttributes(data: data),
+      );
+    } catch (e) {
+      throw 'Error al actualizar el perfil: $e';
+    }
+  }
+
+  // Subir avatar a Supabase Storage o devolver ruta local
+  Future<String?> uploadAvatar(String filePath) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) return null;
+
+      final file = File(filePath);
+      final fileExt = filePath.split('.').last.toLowerCase();
+      final fileName = '${userId}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+      const bucketName = 'avatars';
+
+      try {
+        await _supabase.storage.from(bucketName).upload(
+          fileName,
+          file,
+          fileOptions: const FileOptions(upsert: true),
+        );
+        final imageUrl = _supabase.storage.from(bucketName).getPublicUrl(fileName);
+        return imageUrl;
+      } catch (_) {
+        // Fallback si el bucket no existe en Supabase Storage
+        return filePath;
+      }
+    } catch (e) {
+      return null;
     }
   }
 

@@ -2,9 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/inscripcion_repository.dart';
 import '../models/jornada.dart';
 import 'jornada_controller.dart';
+import '../local_db/database_provider.dart';
 
 final inscripcionRepositoryProvider = Provider<InscripcionRepository>((ref) {
-  return InscripcionRepository();
+  final db = ref.watch(appDatabaseProvider);
+  return InscripcionRepository(db);
 });
 
 class InscripcionController extends AsyncNotifier<void> {
@@ -13,21 +15,24 @@ class InscripcionController extends AsyncNotifier<void> {
     // No estado inicial complejo requerido en build general
   }
 
-  // Inscribirse en una jornada
+  // Inscribirse en una jornada (soporte offline)
   Future<void> inscribirse(String jornadaId, String voluntarioId) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(inscripcionRepositoryProvider);
       await repo.inscribirse(jornadaId, voluntarioId);
+      // Forzar sincronización si hay conexión
+      ref.read(syncServiceProvider).sincronizarPendientes();
     });
   }
 
-  // Cancelar inscripción
+  // Cancelar inscripción (soporte offline)
   Future<void> cancelarInscripcion(String jornadaId, String voluntarioId) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(inscripcionRepositoryProvider);
       await repo.cancelarInscripcion(jornadaId, voluntarioId);
+      ref.read(syncServiceProvider).sincronizarPendientes();
     });
   }
 }

@@ -6,17 +6,14 @@ import 'screens/login_screen.dart';
 import 'screens/home_shell.dart';
 
 Future<void> main() async {
-  // Aseguramos que los bindings de Flutter estén inicializados antes de usar plugins
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. Configuración de Supabase.initialize() con tu URL y Publishable Key reales
   await Supabase.initialize(
     url: 'https://hisifcteaatneevrjvov.supabase.co',
     publishableKey: 'sb_publishable_-ycdBKUc7LuIxzyhVdIE9g_MvUbIblZ',
   );
 
   runApp(
-    // ProviderScope es obligatorio en la raíz para que Riverpod funcione
     const ProviderScope(
       child: CausApp(),
     ),
@@ -28,20 +25,64 @@ class CausApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 5. Escuchamos authStateProvider para determinar si hay sesión activa
     final authState = ref.watch(authStateProvider);
 
     return MaterialApp(
       title: 'CausApp',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2E7D32), // Forest Emerald Green
+          primary: const Color(0xFF2E7D32),
+          secondary: const Color(0xFF43A047),
+          surface: Colors.white,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF4F7F6),
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Color(0xFF2E7D32),
+          foregroundColor: Colors.white,
+          titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+        ),
+        cardTheme: const CardThemeData(
+          elevation: 2,
+          shadowColor: Color(0x14000000),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+          color: Colors.white,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
+          ),
+          labelStyle: TextStyle(color: Colors.grey.shade700),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF2E7D32),
+            foregroundColor: Colors.white,
+            elevation: 2,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
       ),
       home: authState.when(
         data: (state) {
-          // Si hay sesión activa (state.session != null), mostramos HomePlaceholderScreen
-          // Si no hay sesión, mostramos LoginScreen
           final session = state.session;
           if (session != null) {
             return const HomeShell();
@@ -49,16 +90,21 @@ class CausApp extends ConsumerWidget {
             return const LoginScreen();
           }
         },
-        // Indicador de carga mientras se verifica el estado inicial de la sesión
         loading: () => const Scaffold(
           body: Center(
-            child: CircularProgressIndicator(color: Colors.green),
+            child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
           ),
         ),
-        // Manejo de error en caso de fallo al obtener el estado de autenticación
         error: (error, stackTrace) => Scaffold(
           body: Center(
-            child: Text('Error al cargar la autenticación: $error'),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text(
+                'Error al cargar la autenticación: $error',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red, fontSize: 16),
+              ),
+            ),
           ),
         ),
       ),

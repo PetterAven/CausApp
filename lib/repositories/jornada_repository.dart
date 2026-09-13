@@ -1,20 +1,57 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/jornada.dart';
+import '../local_db/app_database.dart';
 
 class JornadaRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
+  final AppDatabase _db;
 
-  // Obtener todas las jornadas activas
+  JornadaRepository(this._db);
+
+  // Obtener todas las jornadas con estrategia Cache-then-Network
   Future<List<Jornada>> obtenerJornadas() async {
     try {
-      final response = await _supabase
-          .from('jornadas')
-          .select()
-          .order('created_at', ascending: false);
-      
-      return (response as List)
-          .map((json) => Jornada.fromJson(json as Map<String, dynamic>))
-          .toList();
+      // 1. Obtener de caché local primero para respuesta instantánea
+      final localRows = await _db.obtenerJornadasLocal();
+      List<Jornada> jornadasLocales = localRows.map((row) => Jornada(
+        id: row.id,
+        organizadorId: row.organizadorId,
+        titulo: row.titulo,
+        categoria: row.categoria,
+        categoriaPersonalizada: row.categoriaPersonalizada,
+        descripcion: row.descripcion ?? '',
+        fecha: row.fecha,
+        hora: row.hora,
+        latitud: row.latitud,
+        longitud: row.longitud,
+        direccionReferencia: row.direccionReferencia ?? '',
+        cupoVoluntarios: row.cupoVoluntarios,
+        estado: row.estado,
+        createdAt: row.createdAt,
+      )).toList();
+
+      // 2. Intentar fetch de Supabase
+      try {
+        final response = await _supabase
+            .from('jornadas')
+            .select()
+            .order('created_at', ascending: false);
+
+        final jornadasRemote = (response as List)
+            .map((json) => Jornada.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        // 3. Upsert en Drift
+        await _db.upsertJornadas(jornadasRemote);
+
+        return jornadasRemote;
+      } catch (networkError) {
+        // Si no hay conexión o falla la red, devolver datos locales cacheados
+        if (jornadasLocales.isNotEmpty) {
+          return jornadasLocales;
+        }
+        rethrow;
+      }
     } catch (e) {
       throw 'Error al cargar jornadas: ${e.toString()}';
     }
@@ -29,8 +66,30 @@ class JornadaRepository {
           .eq('id', id)
           .single();
       
-      return Jornada.fromJson(response);
+      final jornada = Jornada.fromJson(response);
+      await _db.upsertJornada(jornada);
+      return jornada;
     } catch (e) {
+      final localRows = await _db.obtenerJornadasLocal();
+      final match = localRows.where((r) => r.id == id).firstOrNull;
+      if (match != null) {
+        return Jornada(
+          id: match.id,
+          organizadorId: match.organizadorId,
+          titulo: match.titulo,
+          categoria: match.categoria,
+          categoriaPersonalizada: match.categoriaPersonalizada,
+          descripcion: match.descripcion ?? '',
+          fecha: match.fecha,
+          hora: match.hora,
+          latitud: match.latitud,
+          longitud: match.longitud,
+          direccionReferencia: match.direccionReferencia ?? '',
+          cupoVoluntarios: match.cupoVoluntarios,
+          estado: match.estado,
+          createdAt: match.createdAt,
+        );
+      }
       throw 'Error al obtener la jornada: ${e.toString()}';
     }
   }
@@ -38,7 +97,9 @@ class JornadaRepository {
   // Crear una nueva jornada
   Future<void> crearJornada(Jornada jornada) async {
     try {
-      await _supabase.from('jornadas').insert(jornada.toJson());
+      final response = await _supabase.from('jornadas').insert(jornada.toJson()).select().single();
+      final nueva = Jornada.fromJson(response);
+      await _db.upsertJornada(nueva);
     } catch (e) {
       throw 'Error al crear la jornada: ${e.toString()}';
     }
@@ -53,11 +114,29 @@ class JornadaRepository {
           .eq('organizador_id', organizadorId)
           .order('created_at', ascending: false);
       
-      return (response as List)
+      final jornadas = (response as List)
           .map((json) => Jornada.fromJson(json as Map<String, dynamic>))
           .toList();
+      await _db.upsertJornadas(jornadas);
+      return jornadas;
     } catch (e) {
-      throw 'Error al cargar tus jornadas organizadas: ${e.toString()}';
+      final local = await _db.obtenerJornadasLocal();
+      return local.where((r) => r.organizadorId == organizadorId).map((row) => Jornada(
+        id: row.id,
+        organizadorId: row.organizadorId,
+        titulo: row.titulo,
+        categoria: row.categoria,
+        categoriaPersonalizada: row.categoriaPersonalizada,
+        descripcion: row.descripcion ?? '',
+        fecha: row.fecha,
+        hora: row.hora,
+        latitud: row.latitud,
+        longitud: row.longitud,
+        direccionReferencia: row.direccionReferencia ?? '',
+        cupoVoluntarios: row.cupoVoluntarios,
+        estado: row.estado,
+        createdAt: row.createdAt,
+      )).toList();
     }
   }
 }

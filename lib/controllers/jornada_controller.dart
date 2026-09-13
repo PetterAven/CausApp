@@ -1,9 +1,37 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/jornada.dart';
 import '../repositories/jornada_repository.dart';
+import '../local_db/database_provider.dart';
 
 final jornadaRepositoryProvider = Provider<JornadaRepository>((ref) {
-  return JornadaRepository();
+  final db = ref.watch(appDatabaseProvider);
+  return JornadaRepository(db);
+});
+
+// Stream provider reactivo basado en Drift (con caché local + sync en background)
+final jornadasStreamProvider = StreamProvider<List<Jornada>>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  // Disparar un fetch inicial en background
+  Future.microtask(() {
+    ref.read(jornadaRepositoryProvider).obtenerJornadas().catchError((_) => <Jornada>[]);
+  });
+  
+  return db.watchJornadas().map((rows) => rows.map((row) => Jornada(
+    id: row.id,
+    organizadorId: row.organizadorId,
+    titulo: row.titulo,
+    categoria: row.categoria,
+    categoriaPersonalizada: row.categoriaPersonalizada,
+    descripcion: row.descripcion ?? '',
+    fecha: row.fecha,
+    hora: row.hora,
+    latitud: row.latitud,
+    longitud: row.longitud,
+    direccionReferencia: row.direccionReferencia ?? '',
+    cupoVoluntarios: row.cupoVoluntarios,
+    estado: row.estado,
+    createdAt: row.createdAt,
+  )).toList());
 });
 
 class JornadaController extends AsyncNotifier<List<Jornada>> {

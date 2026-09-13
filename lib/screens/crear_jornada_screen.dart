@@ -26,7 +26,6 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
   DateTime? _fechaSeleccionada;
   TimeOfDay? _horaSeleccionada;
 
-  // Ubicación inicial por defecto (ej. Centro de la CDMX o similar)
   LatLng _ubicacionSeleccionada = const LatLng(19.432608, -99.133209);
   GoogleMapController? _mapController;
   bool _isLoadingLocation = true;
@@ -48,7 +47,6 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
     super.dispose();
   }
 
-  // Obtener ubicación actual del organizador para centrar el mapa
   Future<void> _obtenerUbicacionActual() async {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -85,24 +83,38 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
     }
   }
 
-  // Selector de fecha
   Future<void> _seleccionarFecha(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: Color(0xFF2E7D32)),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() => _fechaSeleccionada = picked);
     }
   }
 
-  // Selector de hora
   Future<void> _seleccionarHora(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: Color(0xFF2E7D32)),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() => _horaSeleccionada = picked);
@@ -159,18 +171,13 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Jornada publicada exitosamente!')),
+          const SnackBar(
+            content: Text('¡Jornada publicada exitosamente!'),
+            backgroundColor: Color(0xFF2E7D32),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
-        // Limpiar formulario
-        _tituloController.clear();
-        _descripcionController.clear();
-        _categoriaPersonalizadaController.clear();
-        _direccionReferenciaController.clear();
-        _cupoController.clear();
-        setState(() {
-          _fechaSeleccionada = null;
-          _horaSeleccionada = null;
-        });
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -190,48 +197,45 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Crear Jornada Comunitaria'),
-        backgroundColor: Colors.green,
+        backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Título
+              const Text(
+                'Detalles de la Iniciativa',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _tituloController,
                 decoration: const InputDecoration(
                   labelText: 'Título de la jornada',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.title),
+                  prefixIcon: Icon(Icons.title, color: Color(0xFF2E7D32)),
                 ),
                 validator: (value) => value == null || value.isEmpty ? 'Campo obligatorio' : null,
               ),
               const SizedBox(height: 16),
-
-              // Descripción
               TextFormField(
                 controller: _descripcionController,
                 maxLines: 3,
                 decoration: const InputDecoration(
                   labelText: 'Descripción detallada',
-                  border: OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
                 validator: (value) => value == null || value.isEmpty ? 'Campo obligatorio' : null,
               ),
               const SizedBox(height: 16),
-
-              // Dropdown de Categoría
               DropdownButtonFormField<String>(
                 initialValue: _categoriaSeleccionada,
                 decoration: const InputDecoration(
                   labelText: 'Categoría',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.category),
+                  prefixIcon: Icon(Icons.category_outlined, color: Color(0xFF2E7D32)),
                 ),
                 items: _categorias.map((cat) {
                   return DropdownMenuItem(value: cat, child: Text(cat));
@@ -243,14 +247,11 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
-              // Si categoría es "Otro", mostrar campo personalizado
               if (_categoriaSeleccionada == 'Otro') ...[
                 TextFormField(
                   controller: _categoriaPersonalizadaController,
                   decoration: const InputDecoration(
                     labelText: 'Especifica la categoría',
-                    border: OutlineInputBorder(),
                   ),
                   validator: (value) => _categoriaSeleccionada == 'Otro' && (value == null || value.isEmpty)
                       ? 'Escribe la categoría'
@@ -258,45 +259,62 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
-
-              // Selector de Fecha y Hora
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _seleccionarFecha(context),
-                      icon: const Icon(Icons.calendar_today),
-                      label: Text(_fechaSeleccionada == null
-                          ? 'Elegir Fecha'
-                          : '${_fechaSeleccionada!.day}/${_fechaSeleccionada!.month}/${_fechaSeleccionada!.year}'),
+                      icon: const Icon(Icons.calendar_today, color: Color(0xFF2E7D32)),
+                      label: Text(
+                        _fechaSeleccionada == null
+                            ? 'Elegir Fecha'
+                            : '${_fechaSeleccionada!.day}/${_fechaSeleccionada!.month}/${_fechaSeleccionada!.year}',
+                        style: TextStyle(color: _fechaSeleccionada == null ? Colors.grey.shade700 : Colors.black87),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        side: BorderSide(color: Colors.grey.shade300),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _seleccionarHora(context),
-                      icon: const Icon(Icons.access_time),
-                      label: Text(_horaSeleccionada == null
-                          ? 'Elegir Hora'
-                          : _horaSeleccionada!.format(context)),
+                      icon: const Icon(Icons.access_time, color: Color(0xFF2E7D32)),
+                      label: Text(
+                        _horaSeleccionada == null
+                            ? 'Elegir Hora'
+                            : _horaSeleccionada!.format(context),
+                        style: TextStyle(color: _horaSeleccionada == null ? Colors.grey.shade700 : Colors.black87),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        side: BorderSide(color: Colors.grey.shade300),
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
-
-              // Mapa para seleccionar ubicación
               const Text(
-                'Selecciona la ubicación exacta (mueve el mapa / pin):',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                'Ubicación en el Mapa',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
+              const Text(
+                'Mueve el mapa para colocar el marcador en el punto exacto de la jornada.',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 12),
               SizedBox(
-                height: 250,
+                height: 240,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
                   child: _isLoadingLocation
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
                       : GoogleMap(
                           initialCameraPosition: CameraPosition(
                             target: _ubicacionSeleccionada,
@@ -308,7 +326,7 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
                           },
                           myLocationEnabled: true,
                           myLocationButtonEnabled: true,
-                          // Marcador fijo en el centro que indica la ubicación seleccionada
+                          zoomControlsEnabled: false,
                           markers: {
                             Marker(
                               markerId: const MarkerId('ubicacion_jornada'),
@@ -322,52 +340,43 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
                         ),
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Nota: El marcador en el centro indica el punto exacto. Puedes mover el mapa.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
               const SizedBox(height: 16),
-
-              // Dirección de referencia
               TextFormField(
                 controller: _direccionReferenciaController,
                 decoration: const InputDecoration(
-                  labelText: 'Referencia de dirección (ej. Frente a la tienda X)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.place),
+                  labelText: 'Referencia de dirección (ej. Frente al parque central)',
+                  prefixIcon: Icon(Icons.place_outlined, color: Color(0xFF2E7D32)),
                 ),
                 validator: (value) => value == null || value.isEmpty ? 'Campo obligatorio' : null,
               ),
               const SizedBox(height: 16),
-
-              // Cupo de voluntarios (opcional)
               TextFormField(
                 controller: _cupoController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Cupo máximo de voluntarios (opcional)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.group),
+                  prefixIcon: Icon(Icons.group_outlined, color: Color(0xFF2E7D32)),
                 ),
               ),
               const SizedBox(height: 32),
-
-              // Botón Publicar
               ElevatedButton(
                 onPressed: _isSubmitting ? null : _publicarJornada,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
+                  backgroundColor: const Color(0xFF2E7D32),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: _isSubmitting
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                      )
                     : const Text(
                         'Publicar Jornada',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
