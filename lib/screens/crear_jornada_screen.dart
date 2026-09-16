@@ -4,9 +4,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/jornada_controller.dart';
+import '../models/jornada.dart';
 
 class CrearJornadaScreen extends ConsumerStatefulWidget {
-  const CrearJornadaScreen({super.key});
+  final Jornada? jornadaParaEditar;
+
+  const CrearJornadaScreen({super.key, this.jornadaParaEditar});
 
   @override
   ConsumerState<CrearJornadaScreen> createState() => _CrearJornadaScreenState();
@@ -34,7 +37,44 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
   @override
   void initState() {
     super.initState();
-    _obtenerUbicacionActual();
+    if (widget.jornadaParaEditar != null) {
+      final j = widget.jornadaParaEditar!;
+      _tituloController.text = j.titulo;
+      _descripcionController.text = j.descripcion;
+      _categoriaSeleccionada = _categorias.contains(j.categoria) ? j.categoria : 'Otro';
+      if (_categoriaSeleccionada == 'Otro') {
+        _categoriaPersonalizadaController.text = j.categoriaPersonalizada ?? j.categoria;
+      }
+      try {
+        final partsFecha = j.fecha.split('-');
+        if (partsFecha.length == 3) {
+          _fechaSeleccionada = DateTime(
+            int.parse(partsFecha[0]),
+            int.parse(partsFecha[1]),
+            int.parse(partsFecha[2]),
+          );
+        }
+      } catch (_) {}
+
+      try {
+        final partsHora = j.hora.split(':');
+        if (partsHora.length == 2) {
+          _horaSeleccionada = TimeOfDay(
+            hour: int.parse(partsHora[0]),
+            minute: int.parse(partsHora[1]),
+          );
+        }
+      } catch (_) {}
+
+      _ubicacionSeleccionada = LatLng(j.latitud, j.longitud);
+      _direccionReferenciaController.text = j.direccionReferencia;
+      if (j.cupoVoluntarios != null) {
+        _cupoController.text = j.cupoVoluntarios.toString();
+      }
+      _isLoadingLocation = false;
+    } else {
+      _obtenerUbicacionActual();
+    }
   }
 
   @override
@@ -153,31 +193,66 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
         cupo = int.tryParse(_cupoController.text.trim());
       }
 
-      await ref.read(jornadaControllerProvider.notifier).crearJornada(
-            organizadorId: user.id,
-            titulo: _tituloController.text.trim(),
-            categoria: _categoriaSeleccionada,
-            categoriaPersonalizada: _categoriaSeleccionada == 'Otro'
-                ? _categoriaPersonalizadaController.text.trim()
-                : null,
-            descripcion: _descripcionController.text.trim(),
-            fecha: fechaStr,
-            hora: horaStr,
-            latitud: _ubicacionSeleccionada.latitude,
-            longitud: _ubicacionSeleccionada.longitude,
-            direccionReferencia: _direccionReferenciaController.text.trim(),
-            cupoVoluntarios: cupo,
-          );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Jornada publicada exitosamente!'),
-            backgroundColor: Color(0xFF2E7D32),
-            behavior: SnackBarBehavior.floating,
-          ),
+      if (widget.jornadaParaEditar != null) {
+        final jornadaActualizada = Jornada(
+          id: widget.jornadaParaEditar!.id,
+          organizadorId: widget.jornadaParaEditar!.organizadorId,
+          titulo: _tituloController.text.trim(),
+          categoria: _categoriaSeleccionada,
+          categoriaPersonalizada: _categoriaSeleccionada == 'Otro'
+              ? _categoriaPersonalizadaController.text.trim()
+              : null,
+          descripcion: _descripcionController.text.trim(),
+          fecha: fechaStr,
+          hora: horaStr,
+          latitud: _ubicacionSeleccionada.latitude,
+          longitud: _ubicacionSeleccionada.longitude,
+          direccionReferencia: _direccionReferenciaController.text.trim(),
+          cupoVoluntarios: cupo,
+          estado: widget.jornadaParaEditar!.estado,
+          estadoProgreso: widget.jornadaParaEditar!.estadoProgreso,
+          createdAt: widget.jornadaParaEditar!.createdAt,
         );
-        Navigator.pop(context);
+
+        await ref.read(jornadaControllerProvider.notifier).actualizarJornada(jornadaActualizada);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Jornada actualizada exitosamente!'),
+              backgroundColor: Color(0xFF2E7D32),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } else {
+        await ref.read(jornadaControllerProvider.notifier).crearJornada(
+              organizadorId: user.id,
+              titulo: _tituloController.text.trim(),
+              categoria: _categoriaSeleccionada,
+              categoriaPersonalizada: _categoriaSeleccionada == 'Otro'
+                  ? _categoriaPersonalizadaController.text.trim()
+                  : null,
+              descripcion: _descripcionController.text.trim(),
+              fecha: fechaStr,
+              hora: horaStr,
+              latitud: _ubicacionSeleccionada.latitude,
+              longitud: _ubicacionSeleccionada.longitude,
+              direccionReferencia: _direccionReferenciaController.text.trim(),
+              cupoVoluntarios: cupo,
+            );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Jornada publicada exitosamente!'),
+              backgroundColor: Color(0xFF2E7D32),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -196,7 +271,7 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Crear Jornada Comunitaria'),
+        title: Text(widget.jornadaParaEditar != null ? 'Editar Jornada Comunitaria' : 'Crear Jornada Comunitaria'),
         backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
       ),
@@ -371,9 +446,9 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
                         width: 22,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                       )
-                    : const Text(
-                        'Publicar Jornada',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    : Text(
+                        widget.jornadaParaEditar != null ? 'Guardar Cambios' : 'Publicar Jornada',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
               ),
               const SizedBox(height: 24),

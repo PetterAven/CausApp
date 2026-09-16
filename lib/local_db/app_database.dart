@@ -22,6 +22,7 @@ class JornadasLocal extends Table {
   TextColumn get direccionReferencia => text().nullable()();
   IntColumn get cupoVoluntarios => integer().nullable()();
   TextColumn get estado => text().withDefault(const Constant('activa'))();
+  TextColumn get estadoProgreso => text().withDefault(const Constant('pendiente'))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get syncedAt => dateTime().nullable()();
 
@@ -75,6 +76,7 @@ class AppDatabase extends _$AppDatabase {
         direccionReferencia: Value(jornada.direccionReferencia),
         cupoVoluntarios: Value(jornada.cupoVoluntarios),
         estado: Value(jornada.estado),
+        estadoProgreso: Value(jornada.estadoProgreso),
         createdAt: jornada.createdAt,
         syncedAt: Value(syncedAt ?? DateTime.now()),
       ),
@@ -100,6 +102,7 @@ class AppDatabase extends _$AppDatabase {
             direccionReferencia: Value(jornada.direccionReferencia),
             cupoVoluntarios: Value(jornada.cupoVoluntarios),
             estado: Value(jornada.estado),
+            estadoProgreso: Value(jornada.estadoProgreso),
             createdAt: jornada.createdAt,
             syncedAt: Value(DateTime.now()),
           ),
@@ -117,6 +120,7 @@ class AppDatabase extends _$AppDatabase {
                 direccionReferencia: Value(jornada.direccionReferencia),
                 cupoVoluntarios: Value(jornada.cupoVoluntarios),
                 estado: Value(jornada.estado),
+                estadoProgreso: Value(jornada.estadoProgreso),
                 createdAt: jornada.createdAt,
                 syncedAt: Value(DateTime.now()),
               )),

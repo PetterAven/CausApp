@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../controllers/auth_controller.dart';
 import 'crear_jornada_screen.dart';
+import 'editar_perfil_screen.dart';
 
 class PerfilScreen extends ConsumerStatefulWidget {
   const PerfilScreen({super.key});
@@ -202,25 +203,45 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const CrearJornadaScreen()),
-                        );
-                      },
-                      icon: const Icon(Icons.add_circle_outline),
-                      label: const Text('Crear nueva jornada comunitaria'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2E7D32),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                    ),
-                  ),
+                   const SizedBox(height: 32),
+                   SizedBox(
+                     width: double.infinity,
+                     child: ElevatedButton.icon(
+                       onPressed: () {
+                         Navigator.push(
+                           context,
+                           MaterialPageRoute(builder: (context) => const EditarPerfilScreen()),
+                         );
+                       },
+                       icon: const Icon(Icons.edit_outlined),
+                       label: const Text('Editar Perfil'),
+                       style: ElevatedButton.styleFrom(
+                         backgroundColor: const Color(0xFF2E7D32),
+                         foregroundColor: Colors.white,
+                         padding: const EdgeInsets.symmetric(vertical: 16),
+                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                       ),
+                     ),
+                   ),
+                   const SizedBox(height: 16),
+                   SizedBox(
+                     width: double.infinity,
+                     child: OutlinedButton.icon(
+                       onPressed: () {
+                         Navigator.push(
+                           context,
+                           MaterialPageRoute(builder: (context) => const CrearJornadaScreen()),
+                         );
+                       },
+                       icon: const Icon(Icons.add_circle_outline, color: Color(0xFF2E7D32)),
+                       label: const Text('Crear nueva jornada comunitaria', style: TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold)),
+                       style: OutlinedButton.styleFrom(
+                         side: const BorderSide(color: Color(0xFF2E7D32)),
+                         padding: const EdgeInsets.symmetric(vertical: 16),
+                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                       ),
+                     ),
+                   ),
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,

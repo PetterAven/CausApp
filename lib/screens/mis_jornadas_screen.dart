@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/inscripcion_controller.dart';
+import '../controllers/jornada_controller.dart';
 import '../models/jornada.dart';
+import '../widgets/skeleton_loader.dart';
+import '../widgets/estado_progreso_badge.dart';
+import 'crear_jornada_screen.dart';
 
 class MisJornadasScreen extends ConsumerWidget {
   const MisJornadasScreen({super.key});
@@ -87,7 +92,7 @@ class MisJornadasScreen extends ConsumerWidget {
                   },
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32))),
+              loading: () => const SkeletonList(),
               error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.red))),
             ),
 
@@ -122,7 +127,7 @@ class MisJornadasScreen extends ConsumerWidget {
                   },
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32))),
+              loading: () => const SkeletonList(),
               error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.red))),
             ),
           ],
@@ -168,6 +173,13 @@ class _JornadaItemCard extends ConsumerWidget {
                   padding: EdgeInsets.zero,
                   visualDensity: VisualDensity.compact,
                 ),
+                EstadoProgresoBadge(estadoProgreso: jornada.estadoProgreso),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 Row(
                   children: [
                     const Icon(Icons.calendar_today, size: 12, color: Colors.grey),
@@ -178,6 +190,48 @@ class _JornadaItemCard extends ConsumerWidget {
                     ),
                   ],
                 ),
+                if (!esInscritoTab)
+                  PopupMenuButton<String>(
+                    onSelected: (nuevoEstado) async {
+                      try {
+                        await ref.read(jornadaControllerProvider.notifier).actualizarEstadoProgreso(jornada.id, nuevoEstado);
+                        ref.invalidate(jornadasOrganizadasProvider(userId));
+                        ref.invalidate(jornadasStreamProvider);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Estado de progreso actualizado')),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                          );
+                        }
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(value: 'pendiente', child: Text('🔴 Pendiente')),
+                      const PopupMenuItem(value: 'en_proceso', child: Text('🟡 En proceso')),
+                      const PopupMenuItem(value: 'completada', child: Text('🟢 Completada')),
+                    ],
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Cambiar estado', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black54)),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_drop_down, size: 16, color: Colors.black54),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 10),
@@ -205,6 +259,29 @@ class _JornadaItemCard extends ConsumerWidget {
                     style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ),
+              ],
+            ),
+            const Divider(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    try {
+                      final text = '¡Únete a la jornada comunitaria "${jornada.titulo}"!\n📍 Categoría: ${jornada.categoria}\n📅 Fecha: ${jornada.fecha} a las ${jornada.hora}\n📌 Lugar: ${jornada.direccionReferencia}\n\n¡Participa con CausApp!';
+                      Share.share(text);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error al compartir: $e')),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.share_outlined, size: 18, color: Color(0xFF2E7D32)),
+                  label: const Text('Compartir', style: TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold)),
+                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                ),
                 if (esInscritoTab)
                   TextButton.icon(
                     onPressed: () async {
@@ -219,6 +296,73 @@ class _JornadaItemCard extends ConsumerWidget {
                     icon: const Icon(Icons.cancel_outlined, size: 18, color: Colors.red),
                     label: const Text('Cancelar', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                     style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                  )
+                else
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CrearJornadaScreen(jornadaParaEditar: jornada),
+                            ),
+                          ).then((_) {
+                            ref.invalidate(jornadasOrganizadasProvider(userId));
+                            ref.invalidate(jornadasStreamProvider);
+                          });
+                        },
+                        icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF2E7D32)),
+                        label: const Text('Editar', style: TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold)),
+                        style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                      ),
+                      const SizedBox(width: 4),
+                      TextButton.icon(
+                        onPressed: () async {
+                          final confirmar = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Eliminar Jornada'),
+                              content: const Text('¿Seguro que quieres eliminar esta jornada? Esta acción no se puede deshacer.'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                  child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirmar == true) {
+                            try {
+                              await ref.read(jornadaControllerProvider.notifier).eliminarJornada(jornada.id);
+                              ref.invalidate(jornadasOrganizadasProvider(userId));
+                              ref.invalidate(jornadasStreamProvider);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Jornada eliminada correctamente'), backgroundColor: Color(0xFF2E7D32)),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error al eliminar: $e'), backgroundColor: Colors.red),
+                                );
+                              }
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                        label: const Text('Eliminar', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                        style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                      ),
+                    ],
                   ),
               ],
             ),

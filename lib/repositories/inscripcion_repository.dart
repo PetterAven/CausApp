@@ -133,6 +133,7 @@ class InscripcionRepository {
             direccionReferencia: row.direccionReferencia ?? '',
             cupoVoluntarios: row.cupoVoluntarios,
             estado: row.estado,
+            estadoProgreso: row.estadoProgreso,
             createdAt: row.createdAt,
           ));
         }

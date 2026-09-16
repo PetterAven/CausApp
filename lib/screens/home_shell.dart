@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'mapa_jornadas_screen.dart';
 import 'mis_jornadas_screen.dart';
+import 'recursos_screen.dart';
 import 'perfil_screen.dart';
 import 'crear_jornada_screen.dart';
 import '../local_db/database_provider.dart';
+import '../widgets/satisfaccion_prompt.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
@@ -16,9 +18,16 @@ class HomeShell extends ConsumerStatefulWidget {
 class _HomeShellState extends ConsumerState<HomeShell> {
   int _currentIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    SatisfaccionPrompt.mostrarSiEsOportuno(context);
+  }
+
   final List<Widget> _screens = [
     const MapaJornadasScreen(),
     const MisJornadasScreen(),
+    const RecursosScreen(),
     const CrearJornadaScreen(),
     const PerfilScreen(),
   ];
@@ -90,6 +99,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             icon: Icon(Icons.calendar_month_outlined),
             activeIcon: Icon(Icons.calendar_month),
             label: 'Mis Jornadas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.handyman_outlined),
+            activeIcon: Icon(Icons.handyman),
+            label: 'Herramientas',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_circle_outline),

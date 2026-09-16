@@ -40,15 +40,18 @@ class AuthController {
     }
   }
 
-  // Actualizar perfil (nombre de usuario y/o avatar)
-  Future<void> updateProfile({String? username, String? avatarUrl}) async {
+  // Actualizar perfil (nombre de usuario, correo y/o avatar)
+  Future<void> updateProfile({String? username, String? email, String? avatarUrl}) async {
     try {
       final Map<String, dynamic> data = {};
       if (username != null) data['username'] = username;
       if (avatarUrl != null) data['avatar_url'] = avatarUrl;
 
       await _supabase.auth.updateUser(
-        UserAttributes(data: data),
+        UserAttributes(
+          email: email,
+          data: data.isNotEmpty ? data : null,
+        ),
       );
     } catch (e) {
       throw 'Error al actualizar el perfil: $e';
@@ -89,6 +92,38 @@ class AuthController {
       await _supabase.auth.signOut();
     } catch (e) {
       throw 'Error al cerrar sesión.';
+    }
+  }
+
+  // Enviar correo de recuperación de contraseña
+  Future<void> resetPassword(String email) async {
+    try {
+      await _supabase.auth.resetPasswordForEmail(email);
+    } catch (e) {
+      throw 'Error al enviar correo de recuperación.';
+    }
+  }
+
+  // Establecer nueva contraseña
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      await _supabase.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+    } catch (e) {
+      throw 'Error al actualizar la contraseña.';
+    }
+  }
+
+  // Reenviar correo de confirmación/verificación
+  Future<void> resendVerificationEmail(String email) async {
+    try {
+      await _supabase.auth.resend(
+        type: OtpType.signup,
+        email: email,
+      );
+    } catch (e) {
+      throw 'Error al reenviar correo de confirmación.';
     }
   }
 }

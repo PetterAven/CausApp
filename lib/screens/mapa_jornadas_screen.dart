@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:share_plus/share_plus.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/jornada_controller.dart';
 import '../controllers/inscripcion_controller.dart';
 import '../models/jornada.dart';
+import '../widgets/skeleton_loader.dart';
+import '../widgets/estado_progreso_badge.dart';
 import 'crear_jornada_screen.dart';
+import 'recursos_jornada_screen.dart';
 
 class MapaJornadasScreen extends ConsumerStatefulWidget {
   const MapaJornadasScreen({super.key});
@@ -115,7 +119,7 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
                       markers: markers,
                     );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32))),
+                  loading: () => const SkeletonList(),
                   error: (e, st) => Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24.0),
@@ -348,19 +352,119 @@ class _JornadaBottomsheetContent extends ConsumerWidget {
                 backgroundColor: const Color(0xFF2E7D32),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${jornada.fecha} • ${jornada.hora}',
-                    style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                ],
+              EstadoProgresoBadge(estadoProgreso: jornada.estadoProgreso),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+              const SizedBox(width: 4),
+              Text(
+                '${jornada.fecha} • ${jornada.hora}',
+                style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ],
           ),
           const SizedBox(height: 12),
+          if (user != null && user.id == jornada.organizadorId) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2E7D32).withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF2E7D32).withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Panel de Organizador (Estado de Progreso):',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF2E7D32)),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildEstadoButton(context, ref, jornada, 'pendiente', 'Pendiente', const Color(0xFFD32F2F)),
+                      _buildEstadoButton(context, ref, jornada, 'en_proceso', 'En Proceso', const Color(0xFFF9A825)),
+                      _buildEstadoButton(context, ref, jornada, 'completada', 'Completada', const Color(0xFF2E7D32)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CrearJornadaScreen(jornadaParaEditar: jornada),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF2E7D32)),
+                        label: const Text('Editar', style: TextStyle(color: Color(0xFF2E7D32), fontSize: 13)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF2E7D32)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final confirmar = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Eliminar Jornada'),
+                              content: const Text('¿Seguro que quieres eliminar esta jornada? Esta acción no se puede deshacer.'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                  child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirmar == true) {
+                            try {
+                              await ref.read(jornadaControllerProvider.notifier).eliminarJornada(jornada.id);
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Jornada eliminada correctamente'), backgroundColor: Color(0xFF2E7D32)),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error al eliminar: $e'), backgroundColor: Colors.red),
+                                );
+                              }
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                        label: const Text('Eliminar', style: TextStyle(color: Colors.red, fontSize: 13)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.red),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           Text(
             jornada.titulo,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
@@ -409,7 +513,48 @@ class _JornadaBottomsheetContent extends ConsumerWidget {
             loading: () => const Text('Cargando inscritos...', style: TextStyle(color: Colors.grey)),
             error: (err, st) => const Text('Inscritos: --', style: TextStyle(color: Colors.grey)),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () {
+              try {
+                final text = '¡Únete a la jornada comunitaria "${jornada.titulo}"!\n📍 Categoría: ${jornada.categoria}\n📅 Fecha: ${jornada.fecha} a las ${jornada.hora}\n📌 Lugar: ${jornada.direccionReferencia}\n\n¡Participa y hagamos la diferencia con CausApp!';
+                Share.share(text);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al compartir: $e')),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.share_outlined, size: 18, color: Color(0xFF2E7D32)),
+            label: const Text('Compartir Jornada', style: TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold)),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFF2E7D32)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RecursosJornadaModalScreen(jornada: jornada),
+                ),
+              );
+            },
+            icon: const Icon(Icons.handyman_outlined, size: 18, color: Color(0xFF2E7D32)),
+            label: const Text('Herramientas y Préstamos para esta Jornada', style: TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold)),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFF2E7D32)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+          const SizedBox(height: 16),
           if (user != null) ...[
             estaInscritoAsync.when(
               data: (inscrito) {
@@ -455,6 +600,46 @@ class _JornadaBottomsheetContent extends ConsumerWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildEstadoButton(BuildContext context, WidgetRef ref, Jornada jornada, String estadoVal, String label, Color color) {
+    final isSelected = jornada.estadoProgreso == estadoVal;
+    return InkWell(
+      onTap: () async {
+        try {
+          await ref.read(jornadaControllerProvider.notifier).actualizarEstadoProgreso(jornada.id, estadoVal);
+          ref.invalidate(jornadasStreamProvider);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Estado actualizado a: $label'), backgroundColor: color),
+            );
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+            );
+          }
+        }
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? color : color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : color,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }

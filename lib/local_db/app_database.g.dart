@@ -143,6 +143,18 @@ class $JornadasLocalTable extends JornadasLocal
     requiredDuringInsert: false,
     defaultValue: const Constant('activa'),
   );
+  static const VerificationMeta _estadoProgresoMeta = const VerificationMeta(
+    'estadoProgreso',
+  );
+  @override
+  late final GeneratedColumn<String> estadoProgreso = GeneratedColumn<String>(
+    'estado_progreso',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pendiente'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -180,6 +192,7 @@ class $JornadasLocalTable extends JornadasLocal
     direccionReferencia,
     cupoVoluntarios,
     estado,
+    estadoProgreso,
     createdAt,
     syncedAt,
   ];
@@ -301,6 +314,15 @@ class $JornadasLocalTable extends JornadasLocal
         estado.isAcceptableOrUnknown(data['estado']!, _estadoMeta),
       );
     }
+    if (data.containsKey('estado_progreso')) {
+      context.handle(
+        _estadoProgresoMeta,
+        estadoProgreso.isAcceptableOrUnknown(
+          data['estado_progreso']!,
+          _estadoProgresoMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -376,6 +398,10 @@ class $JornadasLocalTable extends JornadasLocal
         DriftSqlType.string,
         data['${effectivePrefix}estado'],
       )!,
+      estadoProgreso: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}estado_progreso'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -407,6 +433,7 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
   final String? direccionReferencia;
   final int? cupoVoluntarios;
   final String estado;
+  final String estadoProgreso;
   final DateTime createdAt;
   final DateTime? syncedAt;
   const JornadaLocal({
@@ -423,6 +450,7 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
     this.direccionReferencia,
     this.cupoVoluntarios,
     required this.estado,
+    required this.estadoProgreso,
     required this.createdAt,
     this.syncedAt,
   });
@@ -450,6 +478,7 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
       map['cupo_voluntarios'] = Variable<int>(cupoVoluntarios);
     }
     map['estado'] = Variable<String>(estado);
+    map['estado_progreso'] = Variable<String>(estadoProgreso);
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || syncedAt != null) {
       map['synced_at'] = Variable<DateTime>(syncedAt);
@@ -480,6 +509,7 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
           ? const Value.absent()
           : Value(cupoVoluntarios),
       estado: Value(estado),
+      estadoProgreso: Value(estadoProgreso),
       createdAt: Value(createdAt),
       syncedAt: syncedAt == null && nullToAbsent
           ? const Value.absent()
@@ -510,6 +540,7 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
       ),
       cupoVoluntarios: serializer.fromJson<int?>(json['cupoVoluntarios']),
       estado: serializer.fromJson<String>(json['estado']),
+      estadoProgreso: serializer.fromJson<String>(json['estadoProgreso']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       syncedAt: serializer.fromJson<DateTime?>(json['syncedAt']),
     );
@@ -533,6 +564,7 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
       'direccionReferencia': serializer.toJson<String?>(direccionReferencia),
       'cupoVoluntarios': serializer.toJson<int?>(cupoVoluntarios),
       'estado': serializer.toJson<String>(estado),
+      'estadoProgreso': serializer.toJson<String>(estadoProgreso),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'syncedAt': serializer.toJson<DateTime?>(syncedAt),
     };
@@ -552,6 +584,7 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
     Value<String?> direccionReferencia = const Value.absent(),
     Value<int?> cupoVoluntarios = const Value.absent(),
     String? estado,
+    String? estadoProgreso,
     DateTime? createdAt,
     Value<DateTime?> syncedAt = const Value.absent(),
   }) => JornadaLocal(
@@ -574,6 +607,7 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
         ? cupoVoluntarios.value
         : this.cupoVoluntarios,
     estado: estado ?? this.estado,
+    estadoProgreso: estadoProgreso ?? this.estadoProgreso,
     createdAt: createdAt ?? this.createdAt,
     syncedAt: syncedAt.present ? syncedAt.value : this.syncedAt,
   );
@@ -602,6 +636,9 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
           ? data.cupoVoluntarios.value
           : this.cupoVoluntarios,
       estado: data.estado.present ? data.estado.value : this.estado,
+      estadoProgreso: data.estadoProgreso.present
+          ? data.estadoProgreso.value
+          : this.estadoProgreso,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       syncedAt: data.syncedAt.present ? data.syncedAt.value : this.syncedAt,
     );
@@ -623,6 +660,7 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
           ..write('direccionReferencia: $direccionReferencia, ')
           ..write('cupoVoluntarios: $cupoVoluntarios, ')
           ..write('estado: $estado, ')
+          ..write('estadoProgreso: $estadoProgreso, ')
           ..write('createdAt: $createdAt, ')
           ..write('syncedAt: $syncedAt')
           ..write(')'))
@@ -644,6 +682,7 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
     direccionReferencia,
     cupoVoluntarios,
     estado,
+    estadoProgreso,
     createdAt,
     syncedAt,
   );
@@ -664,6 +703,7 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
           other.direccionReferencia == this.direccionReferencia &&
           other.cupoVoluntarios == this.cupoVoluntarios &&
           other.estado == this.estado &&
+          other.estadoProgreso == this.estadoProgreso &&
           other.createdAt == this.createdAt &&
           other.syncedAt == this.syncedAt);
 }
@@ -682,6 +722,7 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
   final Value<String?> direccionReferencia;
   final Value<int?> cupoVoluntarios;
   final Value<String> estado;
+  final Value<String> estadoProgreso;
   final Value<DateTime> createdAt;
   final Value<DateTime?> syncedAt;
   final Value<int> rowid;
@@ -699,6 +740,7 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
     this.direccionReferencia = const Value.absent(),
     this.cupoVoluntarios = const Value.absent(),
     this.estado = const Value.absent(),
+    this.estadoProgreso = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.syncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -717,6 +759,7 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
     this.direccionReferencia = const Value.absent(),
     this.cupoVoluntarios = const Value.absent(),
     this.estado = const Value.absent(),
+    this.estadoProgreso = const Value.absent(),
     required DateTime createdAt,
     this.syncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -743,6 +786,7 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
     Expression<String>? direccionReferencia,
     Expression<int>? cupoVoluntarios,
     Expression<String>? estado,
+    Expression<String>? estadoProgreso,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? syncedAt,
     Expression<int>? rowid,
@@ -763,6 +807,7 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
         'direccion_referencia': direccionReferencia,
       if (cupoVoluntarios != null) 'cupo_voluntarios': cupoVoluntarios,
       if (estado != null) 'estado': estado,
+      if (estadoProgreso != null) 'estado_progreso': estadoProgreso,
       if (createdAt != null) 'created_at': createdAt,
       if (syncedAt != null) 'synced_at': syncedAt,
       if (rowid != null) 'rowid': rowid,
@@ -783,6 +828,7 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
     Value<String?>? direccionReferencia,
     Value<int?>? cupoVoluntarios,
     Value<String>? estado,
+    Value<String>? estadoProgreso,
     Value<DateTime>? createdAt,
     Value<DateTime?>? syncedAt,
     Value<int>? rowid,
@@ -802,6 +848,7 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
       direccionReferencia: direccionReferencia ?? this.direccionReferencia,
       cupoVoluntarios: cupoVoluntarios ?? this.cupoVoluntarios,
       estado: estado ?? this.estado,
+      estadoProgreso: estadoProgreso ?? this.estadoProgreso,
       createdAt: createdAt ?? this.createdAt,
       syncedAt: syncedAt ?? this.syncedAt,
       rowid: rowid ?? this.rowid,
@@ -852,6 +899,9 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
     if (estado.present) {
       map['estado'] = Variable<String>(estado.value);
     }
+    if (estadoProgreso.present) {
+      map['estado_progreso'] = Variable<String>(estadoProgreso.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -880,6 +930,7 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
           ..write('direccionReferencia: $direccionReferencia, ')
           ..write('cupoVoluntarios: $cupoVoluntarios, ')
           ..write('estado: $estado, ')
+          ..write('estadoProgreso: $estadoProgreso, ')
           ..write('createdAt: $createdAt, ')
           ..write('syncedAt: $syncedAt, ')
           ..write('rowid: $rowid')
@@ -1347,6 +1398,7 @@ typedef $$JornadasLocalTableCreateCompanionBuilder =
       Value<String?> direccionReferencia,
       Value<int?> cupoVoluntarios,
       Value<String> estado,
+      Value<String> estadoProgreso,
       required DateTime createdAt,
       Value<DateTime?> syncedAt,
       Value<int> rowid,
@@ -1366,6 +1418,7 @@ typedef $$JornadasLocalTableUpdateCompanionBuilder =
       Value<String?> direccionReferencia,
       Value<int?> cupoVoluntarios,
       Value<String> estado,
+      Value<String> estadoProgreso,
       Value<DateTime> createdAt,
       Value<DateTime?> syncedAt,
       Value<int> rowid,
@@ -1442,6 +1495,11 @@ class $$JornadasLocalTableFilterComposer
 
   ColumnFilters<String> get estado => $composableBuilder(
     column: $table.estado,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get estadoProgreso => $composableBuilder(
+    column: $table.estadoProgreso,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1530,6 +1588,11 @@ class $$JornadasLocalTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get estadoProgreso => $composableBuilder(
+    column: $table.estadoProgreso,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -1599,6 +1662,11 @@ class $$JornadasLocalTableAnnotationComposer
   GeneratedColumn<String> get estado =>
       $composableBuilder(column: $table.estado, builder: (column) => column);
 
+  GeneratedColumn<String> get estadoProgreso => $composableBuilder(
+    column: $table.estadoProgreso,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -1650,6 +1718,7 @@ class $$JornadasLocalTableTableManager
                 Value<String?> direccionReferencia = const Value.absent(),
                 Value<int?> cupoVoluntarios = const Value.absent(),
                 Value<String> estado = const Value.absent(),
+                Value<String> estadoProgreso = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> syncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -1667,6 +1736,7 @@ class $$JornadasLocalTableTableManager
                 direccionReferencia: direccionReferencia,
                 cupoVoluntarios: cupoVoluntarios,
                 estado: estado,
+                estadoProgreso: estadoProgreso,
                 createdAt: createdAt,
                 syncedAt: syncedAt,
                 rowid: rowid,
@@ -1686,6 +1756,7 @@ class $$JornadasLocalTableTableManager
                 Value<String?> direccionReferencia = const Value.absent(),
                 Value<int?> cupoVoluntarios = const Value.absent(),
                 Value<String> estado = const Value.absent(),
+                Value<String> estadoProgreso = const Value.absent(),
                 required DateTime createdAt,
                 Value<DateTime?> syncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -1703,6 +1774,7 @@ class $$JornadasLocalTableTableManager
                 direccionReferencia: direccionReferencia,
                 cupoVoluntarios: cupoVoluntarios,
                 estado: estado,
+                estadoProgreso: estadoProgreso,
                 createdAt: createdAt,
                 syncedAt: syncedAt,
                 rowid: rowid,

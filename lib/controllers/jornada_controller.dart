@@ -30,6 +30,7 @@ final jornadasStreamProvider = StreamProvider<List<Jornada>>((ref) {
     direccionReferencia: row.direccionReferencia ?? '',
     cupoVoluntarios: row.cupoVoluntarios,
     estado: row.estado,
+    estadoProgreso: row.estadoProgreso,
     createdAt: row.createdAt,
   )).toList());
 });
@@ -83,10 +84,41 @@ class JornadaController extends AsyncNotifier<List<Jornada>> {
         direccionReferencia: direccionReferencia,
         cupoVoluntarios: cupoVoluntarios,
         estado: 'activa',
+        estadoProgreso: 'pendiente',
         createdAt: DateTime.now(),
       );
 
       await repository.crearJornada(nuevaJornada);
+      return await repository.obtenerJornadas();
+    });
+  }
+
+  // Actualizar estado de progreso
+  Future<void> actualizarEstadoProgreso(String id, String nuevoEstado) async {
+    final repository = ref.read(jornadaRepositoryProvider);
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      await repository.actualizarEstadoProgreso(id, nuevoEstado);
+      return await repository.obtenerJornadas();
+    });
+  }
+
+  // Actualizar jornada
+  Future<void> actualizarJornada(Jornada jornada) async {
+    final repository = ref.read(jornadaRepositoryProvider);
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      await repository.actualizarJornada(jornada);
+      return await repository.obtenerJornadas();
+    });
+  }
+
+  // Eliminar jornada (borrado lógico)
+  Future<void> eliminarJornada(String id) async {
+    final repository = ref.read(jornadaRepositoryProvider);
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      await repository.eliminarJornada(id);
       return await repository.obtenerJornadas();
     });
   }

@@ -15,6 +15,7 @@ class Jornada {
   final String direccionReferencia;
   final int? cupoVoluntarios; // null = sin límite
   final String estado; // 'activa', 'cancelada', 'finalizada'
+  final String estadoProgreso; // 'pendiente', 'en_proceso', 'completada'
   final DateTime createdAt;
 
   const Jornada({
@@ -31,6 +32,7 @@ class Jornada {
     required this.direccionReferencia,
     this.cupoVoluntarios,
     required this.estado,
+    required this.estadoProgreso,
     required this.createdAt,
   });
 
@@ -50,6 +52,7 @@ class Jornada {
       direccionReferencia: json['direccion_referencia'] as String,
       cupoVoluntarios: json['cupo_voluntarios'] as int?,
       estado: json['estado'] as String? ?? 'activa',
+      estadoProgreso: json['estado_progreso'] as String? ?? 'pendiente',
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -69,6 +72,7 @@ class Jornada {
       'direccion_referencia': direccionReferencia,
       'cupo_voluntarios': cupoVoluntarios,
       'estado': estado,
+      'estado_progreso': estadoProgreso,
     };
   }
 
@@ -86,6 +90,7 @@ class Jornada {
     String? direccionReferencia,
     int? cupoVoluntarios,
     String? estado,
+    String? estadoProgreso,
     DateTime? createdAt,
   }) {
     return Jornada(
@@ -102,6 +107,7 @@ class Jornada {
       direccionReferencia: direccionReferencia ?? this.direccionReferencia,
       cupoVoluntarios: cupoVoluntarios ?? this.cupoVoluntarios,
       estado: estado ?? this.estado,
+      estadoProgreso: estadoProgreso ?? this.estadoProgreso,
       createdAt: createdAt ?? this.createdAt,
     );
   }

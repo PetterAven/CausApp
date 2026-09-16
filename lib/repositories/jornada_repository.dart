@@ -13,28 +13,32 @@ class JornadaRepository {
     try {
       // 1. Obtener de caché local primero para respuesta instantánea
       final localRows = await _db.obtenerJornadasLocal();
-      List<Jornada> jornadasLocales = localRows.map((row) => Jornada(
-        id: row.id,
-        organizadorId: row.organizadorId,
-        titulo: row.titulo,
-        categoria: row.categoria,
-        categoriaPersonalizada: row.categoriaPersonalizada,
-        descripcion: row.descripcion ?? '',
-        fecha: row.fecha,
-        hora: row.hora,
-        latitud: row.latitud,
-        longitud: row.longitud,
-        direccionReferencia: row.direccionReferencia ?? '',
-        cupoVoluntarios: row.cupoVoluntarios,
-        estado: row.estado,
-        createdAt: row.createdAt,
-      )).toList();
+       List<Jornada> jornadasLocales = localRows
+           .where((row) => row.estado != 'cancelada')
+           .map((row) => Jornada(
+         id: row.id,
+         organizadorId: row.organizadorId,
+         titulo: row.titulo,
+         categoria: row.categoria,
+         categoriaPersonalizada: row.categoriaPersonalizada,
+         descripcion: row.descripcion ?? '',
+         fecha: row.fecha,
+         hora: row.hora,
+         latitud: row.latitud,
+         longitud: row.longitud,
+         direccionReferencia: row.direccionReferencia ?? '',
+         cupoVoluntarios: row.cupoVoluntarios,
+         estado: row.estado,
+         estadoProgreso: row.estadoProgreso,
+         createdAt: row.createdAt,
+       )).toList();
 
       // 2. Intentar fetch de Supabase
       try {
         final response = await _supabase
             .from('jornadas')
             .select()
+            .neq('estado', 'cancelada')
             .order('created_at', ascending: false);
 
         final jornadasRemote = (response as List)
@@ -87,6 +91,7 @@ class JornadaRepository {
           direccionReferencia: match.direccionReferencia ?? '',
           cupoVoluntarios: match.cupoVoluntarios,
           estado: match.estado,
+          estadoProgreso: match.estadoProgreso,
           createdAt: match.createdAt,
         );
       }
@@ -135,8 +140,93 @@ class JornadaRepository {
         direccionReferencia: row.direccionReferencia ?? '',
         cupoVoluntarios: row.cupoVoluntarios,
         estado: row.estado,
+        estadoProgreso: row.estadoProgreso,
         createdAt: row.createdAt,
       )).toList();
+    }
+  }
+
+  // Actualizar estado de progreso de una jornada
+  Future<void> actualizarEstadoProgreso(String id, String estadoProgreso) async {
+    try {
+      await _supabase
+          .from('jornadas')
+          .update({'estado_progreso': estadoProgreso})
+          .eq('id', id);
+
+      final localRows = await _db.obtenerJornadasLocal();
+      final match = localRows.where((r) => r.id == id).firstOrNull;
+      if (match != null) {
+        final updated = Jornada(
+          id: match.id,
+          organizadorId: match.organizadorId,
+          titulo: match.titulo,
+          categoria: match.categoria,
+          categoriaPersonalizada: match.categoriaPersonalizada,
+          descripcion: match.descripcion ?? '',
+          fecha: match.fecha,
+          hora: match.hora,
+          latitud: match.latitud,
+          longitud: match.longitud,
+          direccionReferencia: match.direccionReferencia ?? '',
+          cupoVoluntarios: match.cupoVoluntarios,
+          estado: match.estado,
+          estadoProgreso: estadoProgreso,
+          createdAt: match.createdAt,
+        );
+        await _db.upsertJornada(updated);
+      }
+    } catch (e) {
+      throw 'Error al actualizar el estado de progreso: ${e.toString()}';
+    }
+  }
+
+  // Actualizar una jornada existente
+  Future<void> actualizarJornada(Jornada jornada) async {
+    try {
+      await _supabase
+          .from('jornadas')
+          .update(jornada.toJson())
+          .eq('id', jornada.id);
+
+      await _db.upsertJornada(jornada);
+    } catch (e) {
+      throw 'Error al actualizar la jornada: ${e.toString()}';
+    }
+  }
+
+  // Eliminar (borrado lógico: estado = 'cancelada') una jornada
+  Future<void> eliminarJornada(String id) async {
+    try {
+      await _supabase
+          .from('jornadas')
+          .update({'estado': 'cancelada'})
+          .eq('id', id);
+
+      final localRows = await _db.obtenerJornadasLocal();
+      final match = localRows.where((r) => r.id == id).firstOrNull;
+      if (match != null) {
+        final updated = Jornada(
+          id: match.id,
+          organizadorId: match.organizadorId,
+          titulo: match.titulo,
+          categoria: match.categoria,
+          categoriaPersonalizada: match.categoriaPersonalizada,
+          descripcion: match.descripcion ?? '',
+          fecha: match.fecha,
+          hora: match.hora,
+          latitud: match.latitud,
+          longitud: match.longitud,
+          direccionReferencia: match.direccionReferencia ?? '',
+          cupoVoluntarios: match.cupoVoluntarios,
+          estado: 'cancelada',
+          estadoProgreso: match.estadoProgreso,
+          createdAt: match.createdAt,
+        );
+        await _db.upsertJornada(updated);
+      }
+    } catch (e) {
+      throw 'Error al eliminar la jornada: ${e.toString()}';
     }
   }
 }
