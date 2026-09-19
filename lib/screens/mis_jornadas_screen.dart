@@ -10,6 +10,7 @@ import '../widgets/estado_progreso_badge.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/satisfaccion_prompt.dart';
 import 'crear_jornada_screen.dart';
+import 'donar_screen.dart';
 
 class MisJornadasScreen extends ConsumerWidget {
   const MisJornadasScreen({super.key});
@@ -276,6 +277,10 @@ class _JornadaItemCard extends ConsumerWidget {
                 ),
               ],
             ),
+            if (!esInscritoTab && (jornada.aceptaDonacionesDinero || jornada.aceptaDonacionesArticulos)) ...[
+              const SizedBox(height: 12),
+              DonacionesResumenWidget(jornadaId: jornada.id),
+            ],
             const Divider(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

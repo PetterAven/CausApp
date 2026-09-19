@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/jornada.dart';
 import '../repositories/jornada_repository.dart';
 import '../local_db/database_provider.dart';
+import '../services/notification_service.dart';
 
 final jornadaRepositoryProvider = Provider<JornadaRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
@@ -16,24 +18,40 @@ final jornadasStreamProvider = StreamProvider<List<Jornada>>((ref) {
     ref.read(jornadaRepositoryProvider).obtenerJornadas().catchError((_) => <Jornada>[]);
   });
   
-  return db.watchJornadas().map((rows) => rows.map((row) => Jornada(
-    id: row.id,
-    organizadorId: row.organizadorId,
-    titulo: row.titulo,
-    categoria: row.categoria,
-    categoriaPersonalizada: row.categoriaPersonalizada,
-    descripcion: row.descripcion ?? '',
-    fecha: row.fecha,
-    hora: row.hora,
-    latitud: row.latitud,
-    longitud: row.longitud,
-    direccionReferencia: row.direccionReferencia ?? '',
-    cupoVoluntarios: row.cupoVoluntarios,
-    estado: row.estado,
-    estadoProgreso: row.estadoProgreso,
-    herramientasNecesarias: const [],
-    createdAt: row.createdAt,
-  )).toList());
+  return db.watchJornadas().map((rows) => rows.map((row) {
+    List<String> articulos = [];
+    try {
+      if (row.articulosSolicitados != null && row.articulosSolicitados!.isNotEmpty) {
+        final decoded = jsonDecode(row.articulosSolicitados!);
+        if (decoded is List) {
+          articulos = decoded.map((e) => e.toString()).toList();
+        }
+      }
+    } catch (_) {}
+
+    return Jornada(
+      id: row.id,
+      organizadorId: row.organizadorId,
+      titulo: row.titulo,
+      categoria: row.categoria,
+      categoriaPersonalizada: row.categoriaPersonalizada,
+      descripcion: row.descripcion ?? '',
+      fecha: row.fecha,
+      hora: row.hora,
+      latitud: row.latitud,
+      longitud: row.longitud,
+      direccionReferencia: row.direccionReferencia ?? '',
+      cupoVoluntarios: row.cupoVoluntarios,
+      estado: row.estado,
+      estadoProgreso: row.estadoProgreso,
+      aceptaDonacionesDinero: row.aceptaDonacionesDinero,
+      aceptaDonacionesArticulos: row.aceptaDonacionesArticulos,
+      metaDonacionDinero: row.metaDonacionDinero,
+      articulosSolicitados: articulos,
+      herramientasNecesarias: const [],
+      createdAt: row.createdAt,
+    );
+  }).toList());
 });
 
 class JornadaController extends AsyncNotifier<List<Jornada>> {
@@ -67,6 +85,10 @@ class JornadaController extends AsyncNotifier<List<Jornada>> {
     required String direccionReferencia,
     int? cupoVoluntarios,
     List<String> herramientasNecesarias = const [],
+    bool aceptaDonacionesDinero = false,
+    bool aceptaDonacionesArticulos = false,
+    double? metaDonacionDinero,
+    List<String> articulosSolicitados = const [],
   }) async {
     final repository = ref.read(jornadaRepositoryProvider);
     
@@ -88,10 +110,21 @@ class JornadaController extends AsyncNotifier<List<Jornada>> {
         estado: 'activa',
         estadoProgreso: 'pendiente',
         herramientasNecesarias: herramientasNecesarias,
+        aceptaDonacionesDinero: aceptaDonacionesDinero,
+        aceptaDonacionesArticulos: aceptaDonacionesArticulos,
+        metaDonacionDinero: metaDonacionDinero,
+        articulosSolicitados: articulosSolicitados,
         createdAt: DateTime.now(),
       );
 
       await repository.crearJornada(nuevaJornada);
+      try {
+        final list = await repository.obtenerJornadas();
+        final creada = list.where((j) => j.organizadorId == organizadorId && j.titulo == titulo).firstOrNull;
+        if (creada != null) {
+          await NotificationService().programarRecordatorioJornada(creada);
+        }
+      } catch (_) {}
       return await repository.obtenerJornadas();
     });
   }
@@ -122,6 +155,7 @@ class JornadaController extends AsyncNotifier<List<Jornada>> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       await repository.eliminarJornada(id);
+      await NotificationService().cancelarRecordatorio(id);
       return await repository.obtenerJornadas();
     });
   }

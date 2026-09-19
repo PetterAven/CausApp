@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
@@ -23,6 +24,10 @@ class JornadasLocal extends Table {
   IntColumn get cupoVoluntarios => integer().nullable()();
   TextColumn get estado => text().withDefault(const Constant('activa'))();
   TextColumn get estadoProgreso => text().withDefault(const Constant('pendiente'))();
+  BoolColumn get aceptaDonacionesDinero => boolean().withDefault(const Constant(false))();
+  BoolColumn get aceptaDonacionesArticulos => boolean().withDefault(const Constant(false))();
+  RealColumn get metaDonacionDinero => real().nullable()();
+  TextColumn get articulosSolicitados => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get syncedAt => dateTime().nullable()();
 
@@ -48,7 +53,24 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await customStatement(
+              "UPDATE jornadas_local SET estado_progreso = 'pendiente' WHERE estado_progreso IS NULL;",
+            );
+          }
+          if (from < 3) {
+            await customStatement("ALTER TABLE jornadas_local ADD COLUMN acepta_donaciones_dinero INTEGER NOT NULL DEFAULT 0;");
+            await customStatement("ALTER TABLE jornadas_local ADD COLUMN acepta_donaciones_articulos INTEGER NOT NULL DEFAULT 0;");
+            await customStatement("ALTER TABLE jornadas_local ADD COLUMN meta_donacion_dinero REAL;");
+            await customStatement("ALTER TABLE jornadas_local ADD COLUMN articulos_solicitados TEXT;");
+          }
+        },
+      );
 
   // --- MÉTODOS PARA JORNADAS ---
 
@@ -77,6 +99,10 @@ class AppDatabase extends _$AppDatabase {
         cupoVoluntarios: Value(jornada.cupoVoluntarios),
         estado: Value(jornada.estado),
         estadoProgreso: Value(jornada.estadoProgreso),
+        aceptaDonacionesDinero: Value(jornada.aceptaDonacionesDinero),
+        aceptaDonacionesArticulos: Value(jornada.aceptaDonacionesArticulos),
+        metaDonacionDinero: Value(jornada.metaDonacionDinero),
+        articulosSolicitados: Value(jsonEncode(jornada.articulosSolicitados)),
         createdAt: jornada.createdAt,
         syncedAt: Value(syncedAt ?? DateTime.now()),
       ),
@@ -103,6 +129,10 @@ class AppDatabase extends _$AppDatabase {
             cupoVoluntarios: Value(jornada.cupoVoluntarios),
             estado: Value(jornada.estado),
             estadoProgreso: Value(jornada.estadoProgreso),
+            aceptaDonacionesDinero: Value(jornada.aceptaDonacionesDinero),
+            aceptaDonacionesArticulos: Value(jornada.aceptaDonacionesArticulos),
+            metaDonacionDinero: Value(jornada.metaDonacionDinero),
+            articulosSolicitados: Value(jsonEncode(jornada.articulosSolicitados)),
             createdAt: jornada.createdAt,
             syncedAt: Value(DateTime.now()),
           ),
@@ -121,6 +151,10 @@ class AppDatabase extends _$AppDatabase {
                 cupoVoluntarios: Value(jornada.cupoVoluntarios),
                 estado: Value(jornada.estado),
                 estadoProgreso: Value(jornada.estadoProgreso),
+                aceptaDonacionesDinero: Value(jornada.aceptaDonacionesDinero),
+                aceptaDonacionesArticulos: Value(jornada.aceptaDonacionesArticulos),
+                metaDonacionDinero: Value(jornada.metaDonacionDinero),
+                articulosSolicitados: Value(jsonEncode(jornada.articulosSolicitados)),
                 createdAt: jornada.createdAt,
                 syncedAt: Value(DateTime.now()),
               )),

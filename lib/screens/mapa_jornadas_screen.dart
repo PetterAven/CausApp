@@ -589,26 +589,33 @@ class _JornadaBottomsheetContent extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DonarScreen(jornada: jornada),
+          if (jornada.aceptaDonacionesDinero || jornada.aceptaDonacionesArticulos) ...[
+            if (user == null || user.id != jornada.organizadorId) ...[
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DonarScreen(jornada: jornada),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.favorite, size: 18, color: Colors.white),
+                label: const Text('Donar a esta jornada', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.pink.shade700,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
                 ),
-              );
-            },
-            icon: const Icon(Icons.favorite, size: 18, color: Colors.white),
-            label: const Text('Donar / Apoyar esta Jornada', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.pink.shade700,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
-            ),
-          ),
-          const SizedBox(height: 16),
+              ),
+              const SizedBox(height: 12),
+            ] else ...[
+              DonacionesResumenWidget(jornadaId: jornada.id),
+              const SizedBox(height: 12),
+            ],
+          ],
           if (user != null) ...[
             estaInscritoAsync.when(
               data: (inscrito) {

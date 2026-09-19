@@ -17,6 +17,10 @@ class Jornada {
   final String estado; // 'activa', 'cancelada', 'finalizada'
   final String estadoProgreso; // 'pendiente', 'en_proceso', 'completada'
   final List<String> herramientasNecesarias;
+  final bool aceptaDonacionesDinero;
+  final bool aceptaDonacionesArticulos;
+  final double? metaDonacionDinero;
+  final List<String> articulosSolicitados;
   final DateTime createdAt;
 
   const Jornada({
@@ -35,6 +39,10 @@ class Jornada {
     required this.estado,
     required this.estadoProgreso,
     this.herramientasNecesarias = const [],
+    this.aceptaDonacionesDinero = false,
+    this.aceptaDonacionesArticulos = false,
+    this.metaDonacionDinero,
+    this.articulosSolicitados = const [],
     required this.createdAt,
   });
 
@@ -58,6 +66,12 @@ class Jornada {
       herramientasNecesarias: json['herramientas_necesarias'] != null
           ? List<String>.from((json['herramientas_necesarias'] as List).map((e) => e.toString()))
           : [],
+      aceptaDonacionesDinero: json['acepta_donaciones_dinero'] as bool? ?? false,
+      aceptaDonacionesArticulos: json['acepta_donaciones_articulos'] as bool? ?? false,
+      metaDonacionDinero: (json['meta_donacion_dinero'] as num?)?.toDouble(),
+      articulosSolicitados: json['articulos_solicitados'] != null
+          ? List<String>.from((json['articulos_solicitados'] as List).map((e) => e.toString()))
+          : [],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : DateTime.now(),
     );
   }
@@ -79,6 +93,10 @@ class Jornada {
       'estado': estado,
       'estado_progreso': estadoProgreso,
       'herramientas_necesarias': herramientasNecesarias,
+      'acepta_donaciones_dinero': aceptaDonacionesDinero,
+      'acepta_donaciones_articulos': aceptaDonacionesArticulos,
+      'meta_donacion_dinero': metaDonacionDinero,
+      'articulos_solicitados': articulosSolicitados,
     };
   }
 
@@ -98,6 +116,10 @@ class Jornada {
     String? estado,
     String? estadoProgreso,
     List<String>? herramientasNecesarias,
+    bool? aceptaDonacionesDinero,
+    bool? aceptaDonacionesArticulos,
+    double? metaDonacionDinero,
+    List<String>? articulosSolicitados,
     DateTime? createdAt,
   }) {
     return Jornada(
@@ -116,6 +138,10 @@ class Jornada {
       estado: estado ?? this.estado,
       estadoProgreso: estadoProgreso ?? this.estadoProgreso,
       herramientasNecesarias: herramientasNecesarias ?? this.herramientasNecesarias,
+      aceptaDonacionesDinero: aceptaDonacionesDinero ?? this.aceptaDonacionesDinero,
+      aceptaDonacionesArticulos: aceptaDonacionesArticulos ?? this.aceptaDonacionesArticulos,
+      metaDonacionDinero: metaDonacionDinero ?? this.metaDonacionDinero,
+      articulosSolicitados: articulosSolicitados ?? this.articulosSolicitados,
       createdAt: createdAt ?? this.createdAt,
     );
   }

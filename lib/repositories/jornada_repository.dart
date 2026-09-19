@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/jornada.dart';
 import '../local_db/app_database.dart';
@@ -8,6 +9,41 @@ class JornadaRepository {
 
   JornadaRepository(this._db);
 
+  Jornada _jornadaFromLocal(JornadaLocal row) {
+    List<String> articulos = [];
+    try {
+      if (row.articulosSolicitados != null && row.articulosSolicitados!.isNotEmpty) {
+        final decoded = jsonDecode(row.articulosSolicitados!);
+        if (decoded is List) {
+          articulos = decoded.map((e) => e.toString()).toList();
+        }
+      }
+    } catch (_) {}
+
+    return Jornada(
+      id: row.id,
+      organizadorId: row.organizadorId,
+      titulo: row.titulo,
+      categoria: row.categoria,
+      categoriaPersonalizada: row.categoriaPersonalizada,
+      descripcion: row.descripcion ?? '',
+      fecha: row.fecha,
+      hora: row.hora,
+      latitud: row.latitud,
+      longitud: row.longitud,
+      direccionReferencia: row.direccionReferencia ?? '',
+      cupoVoluntarios: row.cupoVoluntarios,
+      estado: row.estado,
+      estadoProgreso: row.estadoProgreso,
+      aceptaDonacionesDinero: row.aceptaDonacionesDinero,
+      aceptaDonacionesArticulos: row.aceptaDonacionesArticulos,
+      metaDonacionDinero: row.metaDonacionDinero,
+      articulosSolicitados: articulos,
+      herramientasNecesarias: const [],
+      createdAt: row.createdAt,
+    );
+  }
+
   // Obtener todas las jornadas con estrategia Cache-then-Network
   Future<List<Jornada>> obtenerJornadas() async {
     try {
@@ -15,24 +51,8 @@ class JornadaRepository {
       final localRows = await _db.obtenerJornadasLocal();
        List<Jornada> jornadasLocales = localRows
            .where((row) => row.estado != 'cancelada')
-           .map((row) => Jornada(
-         id: row.id,
-         organizadorId: row.organizadorId,
-         titulo: row.titulo,
-         categoria: row.categoria,
-         categoriaPersonalizada: row.categoriaPersonalizada,
-         descripcion: row.descripcion ?? '',
-         fecha: row.fecha,
-         hora: row.hora,
-         latitud: row.latitud,
-         longitud: row.longitud,
-         direccionReferencia: row.direccionReferencia ?? '',
-         cupoVoluntarios: row.cupoVoluntarios,
-         estado: row.estado,
-          estadoProgreso: row.estadoProgreso,
-          herramientasNecesarias: const [],
-          createdAt: row.createdAt,
-       )).toList();
+           .map((row) => _jornadaFromLocal(row))
+           .toList();
 
       // 2. Intentar fetch de Supabase
       try {
@@ -78,24 +98,7 @@ class JornadaRepository {
       final localRows = await _db.obtenerJornadasLocal();
       final match = localRows.where((r) => r.id == id).firstOrNull;
       if (match != null) {
-        return Jornada(
-          id: match.id,
-          organizadorId: match.organizadorId,
-          titulo: match.titulo,
-          categoria: match.categoria,
-          categoriaPersonalizada: match.categoriaPersonalizada,
-          descripcion: match.descripcion ?? '',
-          fecha: match.fecha,
-          hora: match.hora,
-          latitud: match.latitud,
-          longitud: match.longitud,
-          direccionReferencia: match.direccionReferencia ?? '',
-          cupoVoluntarios: match.cupoVoluntarios,
-          estado: match.estado,
-          estadoProgreso: match.estadoProgreso,
-          herramientasNecesarias: const [],
-          createdAt: match.createdAt,
-        );
+        return _jornadaFromLocal(match);
       }
       throw 'Error al obtener la jornada: ${e.toString()}';
     }
@@ -128,24 +131,7 @@ class JornadaRepository {
       return jornadas;
     } catch (e) {
       final local = await _db.obtenerJornadasLocal();
-      return local.where((r) => r.organizadorId == organizadorId).map((row) => Jornada(
-        id: row.id,
-        organizadorId: row.organizadorId,
-        titulo: row.titulo,
-        categoria: row.categoria,
-        categoriaPersonalizada: row.categoriaPersonalizada,
-        descripcion: row.descripcion ?? '',
-        fecha: row.fecha,
-        hora: row.hora,
-        latitud: row.latitud,
-        longitud: row.longitud,
-        direccionReferencia: row.direccionReferencia ?? '',
-        cupoVoluntarios: row.cupoVoluntarios,
-        estado: row.estado,
-        estadoProgreso: row.estadoProgreso,
-        herramientasNecesarias: const [],
-        createdAt: row.createdAt,
-      )).toList();
+      return local.where((r) => r.organizadorId == organizadorId).map((row) => _jornadaFromLocal(row)).toList();
     }
   }
 
@@ -160,23 +146,8 @@ class JornadaRepository {
       final localRows = await _db.obtenerJornadasLocal();
       final match = localRows.where((r) => r.id == id).firstOrNull;
       if (match != null) {
-        final updated = Jornada(
-          id: match.id,
-          organizadorId: match.organizadorId,
-          titulo: match.titulo,
-          categoria: match.categoria,
-          categoriaPersonalizada: match.categoriaPersonalizada,
-          descripcion: match.descripcion ?? '',
-          fecha: match.fecha,
-          hora: match.hora,
-          latitud: match.latitud,
-          longitud: match.longitud,
-          direccionReferencia: match.direccionReferencia ?? '',
-          cupoVoluntarios: match.cupoVoluntarios,
-          estado: match.estado,
-          estadoProgreso: estadoProgreso,
-          createdAt: match.createdAt,
-        );
+        final current = _jornadaFromLocal(match);
+        final updated = current.copyWith(estadoProgreso: estadoProgreso);
         await _db.upsertJornada(updated);
       }
     } catch (e) {
@@ -209,23 +180,8 @@ class JornadaRepository {
       final localRows = await _db.obtenerJornadasLocal();
       final match = localRows.where((r) => r.id == id).firstOrNull;
       if (match != null) {
-        final updated = Jornada(
-          id: match.id,
-          organizadorId: match.organizadorId,
-          titulo: match.titulo,
-          categoria: match.categoria,
-          categoriaPersonalizada: match.categoriaPersonalizada,
-          descripcion: match.descripcion ?? '',
-          fecha: match.fecha,
-          hora: match.hora,
-          latitud: match.latitud,
-          longitud: match.longitud,
-          direccionReferencia: match.direccionReferencia ?? '',
-          cupoVoluntarios: match.cupoVoluntarios,
-          estado: 'cancelada',
-          estadoProgreso: match.estadoProgreso,
-          createdAt: match.createdAt,
-        );
+        final current = _jornadaFromLocal(match);
+        final updated = current.copyWith(estado: 'cancelada');
         await _db.upsertJornada(updated);
       }
     } catch (e) {

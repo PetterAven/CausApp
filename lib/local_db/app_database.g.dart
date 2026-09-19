@@ -155,6 +155,58 @@ class $JornadasLocalTable extends JornadasLocal
     requiredDuringInsert: false,
     defaultValue: const Constant('pendiente'),
   );
+  static const VerificationMeta _aceptaDonacionesDineroMeta =
+      const VerificationMeta('aceptaDonacionesDinero');
+  @override
+  late final GeneratedColumn<bool> aceptaDonacionesDinero =
+      GeneratedColumn<bool>(
+        'acepta_donaciones_dinero',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("acepta_donaciones_dinero" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _aceptaDonacionesArticulosMeta =
+      const VerificationMeta('aceptaDonacionesArticulos');
+  @override
+  late final GeneratedColumn<bool> aceptaDonacionesArticulos =
+      GeneratedColumn<bool>(
+        'acepta_donaciones_articulos',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("acepta_donaciones_articulos" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _metaDonacionDineroMeta =
+      const VerificationMeta('metaDonacionDinero');
+  @override
+  late final GeneratedColumn<double> metaDonacionDinero =
+      GeneratedColumn<double>(
+        'meta_donacion_dinero',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _articulosSolicitadosMeta =
+      const VerificationMeta('articulosSolicitados');
+  @override
+  late final GeneratedColumn<String> articulosSolicitados =
+      GeneratedColumn<String>(
+        'articulos_solicitados',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -193,6 +245,10 @@ class $JornadasLocalTable extends JornadasLocal
     cupoVoluntarios,
     estado,
     estadoProgreso,
+    aceptaDonacionesDinero,
+    aceptaDonacionesArticulos,
+    metaDonacionDinero,
+    articulosSolicitados,
     createdAt,
     syncedAt,
   ];
@@ -323,6 +379,42 @@ class $JornadasLocalTable extends JornadasLocal
         ),
       );
     }
+    if (data.containsKey('acepta_donaciones_dinero')) {
+      context.handle(
+        _aceptaDonacionesDineroMeta,
+        aceptaDonacionesDinero.isAcceptableOrUnknown(
+          data['acepta_donaciones_dinero']!,
+          _aceptaDonacionesDineroMeta,
+        ),
+      );
+    }
+    if (data.containsKey('acepta_donaciones_articulos')) {
+      context.handle(
+        _aceptaDonacionesArticulosMeta,
+        aceptaDonacionesArticulos.isAcceptableOrUnknown(
+          data['acepta_donaciones_articulos']!,
+          _aceptaDonacionesArticulosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('meta_donacion_dinero')) {
+      context.handle(
+        _metaDonacionDineroMeta,
+        metaDonacionDinero.isAcceptableOrUnknown(
+          data['meta_donacion_dinero']!,
+          _metaDonacionDineroMeta,
+        ),
+      );
+    }
+    if (data.containsKey('articulos_solicitados')) {
+      context.handle(
+        _articulosSolicitadosMeta,
+        articulosSolicitados.isAcceptableOrUnknown(
+          data['articulos_solicitados']!,
+          _articulosSolicitadosMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -402,6 +494,22 @@ class $JornadasLocalTable extends JornadasLocal
         DriftSqlType.string,
         data['${effectivePrefix}estado_progreso'],
       )!,
+      aceptaDonacionesDinero: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}acepta_donaciones_dinero'],
+      )!,
+      aceptaDonacionesArticulos: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}acepta_donaciones_articulos'],
+      )!,
+      metaDonacionDinero: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}meta_donacion_dinero'],
+      ),
+      articulosSolicitados: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}articulos_solicitados'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -434,6 +542,10 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
   final int? cupoVoluntarios;
   final String estado;
   final String estadoProgreso;
+  final bool aceptaDonacionesDinero;
+  final bool aceptaDonacionesArticulos;
+  final double? metaDonacionDinero;
+  final String? articulosSolicitados;
   final DateTime createdAt;
   final DateTime? syncedAt;
   const JornadaLocal({
@@ -451,6 +563,10 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
     this.cupoVoluntarios,
     required this.estado,
     required this.estadoProgreso,
+    required this.aceptaDonacionesDinero,
+    required this.aceptaDonacionesArticulos,
+    this.metaDonacionDinero,
+    this.articulosSolicitados,
     required this.createdAt,
     this.syncedAt,
   });
@@ -479,6 +595,16 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
     }
     map['estado'] = Variable<String>(estado);
     map['estado_progreso'] = Variable<String>(estadoProgreso);
+    map['acepta_donaciones_dinero'] = Variable<bool>(aceptaDonacionesDinero);
+    map['acepta_donaciones_articulos'] = Variable<bool>(
+      aceptaDonacionesArticulos,
+    );
+    if (!nullToAbsent || metaDonacionDinero != null) {
+      map['meta_donacion_dinero'] = Variable<double>(metaDonacionDinero);
+    }
+    if (!nullToAbsent || articulosSolicitados != null) {
+      map['articulos_solicitados'] = Variable<String>(articulosSolicitados);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || syncedAt != null) {
       map['synced_at'] = Variable<DateTime>(syncedAt);
@@ -510,6 +636,14 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
           : Value(cupoVoluntarios),
       estado: Value(estado),
       estadoProgreso: Value(estadoProgreso),
+      aceptaDonacionesDinero: Value(aceptaDonacionesDinero),
+      aceptaDonacionesArticulos: Value(aceptaDonacionesArticulos),
+      metaDonacionDinero: metaDonacionDinero == null && nullToAbsent
+          ? const Value.absent()
+          : Value(metaDonacionDinero),
+      articulosSolicitados: articulosSolicitados == null && nullToAbsent
+          ? const Value.absent()
+          : Value(articulosSolicitados),
       createdAt: Value(createdAt),
       syncedAt: syncedAt == null && nullToAbsent
           ? const Value.absent()
@@ -541,6 +675,18 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
       cupoVoluntarios: serializer.fromJson<int?>(json['cupoVoluntarios']),
       estado: serializer.fromJson<String>(json['estado']),
       estadoProgreso: serializer.fromJson<String>(json['estadoProgreso']),
+      aceptaDonacionesDinero: serializer.fromJson<bool>(
+        json['aceptaDonacionesDinero'],
+      ),
+      aceptaDonacionesArticulos: serializer.fromJson<bool>(
+        json['aceptaDonacionesArticulos'],
+      ),
+      metaDonacionDinero: serializer.fromJson<double?>(
+        json['metaDonacionDinero'],
+      ),
+      articulosSolicitados: serializer.fromJson<String?>(
+        json['articulosSolicitados'],
+      ),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       syncedAt: serializer.fromJson<DateTime?>(json['syncedAt']),
     );
@@ -565,6 +711,12 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
       'cupoVoluntarios': serializer.toJson<int?>(cupoVoluntarios),
       'estado': serializer.toJson<String>(estado),
       'estadoProgreso': serializer.toJson<String>(estadoProgreso),
+      'aceptaDonacionesDinero': serializer.toJson<bool>(aceptaDonacionesDinero),
+      'aceptaDonacionesArticulos': serializer.toJson<bool>(
+        aceptaDonacionesArticulos,
+      ),
+      'metaDonacionDinero': serializer.toJson<double?>(metaDonacionDinero),
+      'articulosSolicitados': serializer.toJson<String?>(articulosSolicitados),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'syncedAt': serializer.toJson<DateTime?>(syncedAt),
     };
@@ -585,6 +737,10 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
     Value<int?> cupoVoluntarios = const Value.absent(),
     String? estado,
     String? estadoProgreso,
+    bool? aceptaDonacionesDinero,
+    bool? aceptaDonacionesArticulos,
+    Value<double?> metaDonacionDinero = const Value.absent(),
+    Value<String?> articulosSolicitados = const Value.absent(),
     DateTime? createdAt,
     Value<DateTime?> syncedAt = const Value.absent(),
   }) => JornadaLocal(
@@ -608,6 +764,16 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
         : this.cupoVoluntarios,
     estado: estado ?? this.estado,
     estadoProgreso: estadoProgreso ?? this.estadoProgreso,
+    aceptaDonacionesDinero:
+        aceptaDonacionesDinero ?? this.aceptaDonacionesDinero,
+    aceptaDonacionesArticulos:
+        aceptaDonacionesArticulos ?? this.aceptaDonacionesArticulos,
+    metaDonacionDinero: metaDonacionDinero.present
+        ? metaDonacionDinero.value
+        : this.metaDonacionDinero,
+    articulosSolicitados: articulosSolicitados.present
+        ? articulosSolicitados.value
+        : this.articulosSolicitados,
     createdAt: createdAt ?? this.createdAt,
     syncedAt: syncedAt.present ? syncedAt.value : this.syncedAt,
   );
@@ -639,6 +805,18 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
       estadoProgreso: data.estadoProgreso.present
           ? data.estadoProgreso.value
           : this.estadoProgreso,
+      aceptaDonacionesDinero: data.aceptaDonacionesDinero.present
+          ? data.aceptaDonacionesDinero.value
+          : this.aceptaDonacionesDinero,
+      aceptaDonacionesArticulos: data.aceptaDonacionesArticulos.present
+          ? data.aceptaDonacionesArticulos.value
+          : this.aceptaDonacionesArticulos,
+      metaDonacionDinero: data.metaDonacionDinero.present
+          ? data.metaDonacionDinero.value
+          : this.metaDonacionDinero,
+      articulosSolicitados: data.articulosSolicitados.present
+          ? data.articulosSolicitados.value
+          : this.articulosSolicitados,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       syncedAt: data.syncedAt.present ? data.syncedAt.value : this.syncedAt,
     );
@@ -661,6 +839,10 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
           ..write('cupoVoluntarios: $cupoVoluntarios, ')
           ..write('estado: $estado, ')
           ..write('estadoProgreso: $estadoProgreso, ')
+          ..write('aceptaDonacionesDinero: $aceptaDonacionesDinero, ')
+          ..write('aceptaDonacionesArticulos: $aceptaDonacionesArticulos, ')
+          ..write('metaDonacionDinero: $metaDonacionDinero, ')
+          ..write('articulosSolicitados: $articulosSolicitados, ')
           ..write('createdAt: $createdAt, ')
           ..write('syncedAt: $syncedAt')
           ..write(')'))
@@ -683,6 +865,10 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
     cupoVoluntarios,
     estado,
     estadoProgreso,
+    aceptaDonacionesDinero,
+    aceptaDonacionesArticulos,
+    metaDonacionDinero,
+    articulosSolicitados,
     createdAt,
     syncedAt,
   );
@@ -704,6 +890,10 @@ class JornadaLocal extends DataClass implements Insertable<JornadaLocal> {
           other.cupoVoluntarios == this.cupoVoluntarios &&
           other.estado == this.estado &&
           other.estadoProgreso == this.estadoProgreso &&
+          other.aceptaDonacionesDinero == this.aceptaDonacionesDinero &&
+          other.aceptaDonacionesArticulos == this.aceptaDonacionesArticulos &&
+          other.metaDonacionDinero == this.metaDonacionDinero &&
+          other.articulosSolicitados == this.articulosSolicitados &&
           other.createdAt == this.createdAt &&
           other.syncedAt == this.syncedAt);
 }
@@ -723,6 +913,10 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
   final Value<int?> cupoVoluntarios;
   final Value<String> estado;
   final Value<String> estadoProgreso;
+  final Value<bool> aceptaDonacionesDinero;
+  final Value<bool> aceptaDonacionesArticulos;
+  final Value<double?> metaDonacionDinero;
+  final Value<String?> articulosSolicitados;
   final Value<DateTime> createdAt;
   final Value<DateTime?> syncedAt;
   final Value<int> rowid;
@@ -741,6 +935,10 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
     this.cupoVoluntarios = const Value.absent(),
     this.estado = const Value.absent(),
     this.estadoProgreso = const Value.absent(),
+    this.aceptaDonacionesDinero = const Value.absent(),
+    this.aceptaDonacionesArticulos = const Value.absent(),
+    this.metaDonacionDinero = const Value.absent(),
+    this.articulosSolicitados = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.syncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -760,6 +958,10 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
     this.cupoVoluntarios = const Value.absent(),
     this.estado = const Value.absent(),
     this.estadoProgreso = const Value.absent(),
+    this.aceptaDonacionesDinero = const Value.absent(),
+    this.aceptaDonacionesArticulos = const Value.absent(),
+    this.metaDonacionDinero = const Value.absent(),
+    this.articulosSolicitados = const Value.absent(),
     required DateTime createdAt,
     this.syncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -787,6 +989,10 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
     Expression<int>? cupoVoluntarios,
     Expression<String>? estado,
     Expression<String>? estadoProgreso,
+    Expression<bool>? aceptaDonacionesDinero,
+    Expression<bool>? aceptaDonacionesArticulos,
+    Expression<double>? metaDonacionDinero,
+    Expression<String>? articulosSolicitados,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? syncedAt,
     Expression<int>? rowid,
@@ -808,6 +1014,14 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
       if (cupoVoluntarios != null) 'cupo_voluntarios': cupoVoluntarios,
       if (estado != null) 'estado': estado,
       if (estadoProgreso != null) 'estado_progreso': estadoProgreso,
+      if (aceptaDonacionesDinero != null)
+        'acepta_donaciones_dinero': aceptaDonacionesDinero,
+      if (aceptaDonacionesArticulos != null)
+        'acepta_donaciones_articulos': aceptaDonacionesArticulos,
+      if (metaDonacionDinero != null)
+        'meta_donacion_dinero': metaDonacionDinero,
+      if (articulosSolicitados != null)
+        'articulos_solicitados': articulosSolicitados,
       if (createdAt != null) 'created_at': createdAt,
       if (syncedAt != null) 'synced_at': syncedAt,
       if (rowid != null) 'rowid': rowid,
@@ -829,6 +1043,10 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
     Value<int?>? cupoVoluntarios,
     Value<String>? estado,
     Value<String>? estadoProgreso,
+    Value<bool>? aceptaDonacionesDinero,
+    Value<bool>? aceptaDonacionesArticulos,
+    Value<double?>? metaDonacionDinero,
+    Value<String?>? articulosSolicitados,
     Value<DateTime>? createdAt,
     Value<DateTime?>? syncedAt,
     Value<int>? rowid,
@@ -849,6 +1067,12 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
       cupoVoluntarios: cupoVoluntarios ?? this.cupoVoluntarios,
       estado: estado ?? this.estado,
       estadoProgreso: estadoProgreso ?? this.estadoProgreso,
+      aceptaDonacionesDinero:
+          aceptaDonacionesDinero ?? this.aceptaDonacionesDinero,
+      aceptaDonacionesArticulos:
+          aceptaDonacionesArticulos ?? this.aceptaDonacionesArticulos,
+      metaDonacionDinero: metaDonacionDinero ?? this.metaDonacionDinero,
+      articulosSolicitados: articulosSolicitados ?? this.articulosSolicitados,
       createdAt: createdAt ?? this.createdAt,
       syncedAt: syncedAt ?? this.syncedAt,
       rowid: rowid ?? this.rowid,
@@ -902,6 +1126,24 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
     if (estadoProgreso.present) {
       map['estado_progreso'] = Variable<String>(estadoProgreso.value);
     }
+    if (aceptaDonacionesDinero.present) {
+      map['acepta_donaciones_dinero'] = Variable<bool>(
+        aceptaDonacionesDinero.value,
+      );
+    }
+    if (aceptaDonacionesArticulos.present) {
+      map['acepta_donaciones_articulos'] = Variable<bool>(
+        aceptaDonacionesArticulos.value,
+      );
+    }
+    if (metaDonacionDinero.present) {
+      map['meta_donacion_dinero'] = Variable<double>(metaDonacionDinero.value);
+    }
+    if (articulosSolicitados.present) {
+      map['articulos_solicitados'] = Variable<String>(
+        articulosSolicitados.value,
+      );
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -931,6 +1173,10 @@ class JornadasLocalCompanion extends UpdateCompanion<JornadaLocal> {
           ..write('cupoVoluntarios: $cupoVoluntarios, ')
           ..write('estado: $estado, ')
           ..write('estadoProgreso: $estadoProgreso, ')
+          ..write('aceptaDonacionesDinero: $aceptaDonacionesDinero, ')
+          ..write('aceptaDonacionesArticulos: $aceptaDonacionesArticulos, ')
+          ..write('metaDonacionDinero: $metaDonacionDinero, ')
+          ..write('articulosSolicitados: $articulosSolicitados, ')
           ..write('createdAt: $createdAt, ')
           ..write('syncedAt: $syncedAt, ')
           ..write('rowid: $rowid')
@@ -1399,6 +1645,10 @@ typedef $$JornadasLocalTableCreateCompanionBuilder =
       Value<int?> cupoVoluntarios,
       Value<String> estado,
       Value<String> estadoProgreso,
+      Value<bool> aceptaDonacionesDinero,
+      Value<bool> aceptaDonacionesArticulos,
+      Value<double?> metaDonacionDinero,
+      Value<String?> articulosSolicitados,
       required DateTime createdAt,
       Value<DateTime?> syncedAt,
       Value<int> rowid,
@@ -1419,6 +1669,10 @@ typedef $$JornadasLocalTableUpdateCompanionBuilder =
       Value<int?> cupoVoluntarios,
       Value<String> estado,
       Value<String> estadoProgreso,
+      Value<bool> aceptaDonacionesDinero,
+      Value<bool> aceptaDonacionesArticulos,
+      Value<double?> metaDonacionDinero,
+      Value<String?> articulosSolicitados,
       Value<DateTime> createdAt,
       Value<DateTime?> syncedAt,
       Value<int> rowid,
@@ -1500,6 +1754,26 @@ class $$JornadasLocalTableFilterComposer
 
   ColumnFilters<String> get estadoProgreso => $composableBuilder(
     column: $table.estadoProgreso,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get aceptaDonacionesDinero => $composableBuilder(
+    column: $table.aceptaDonacionesDinero,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get aceptaDonacionesArticulos => $composableBuilder(
+    column: $table.aceptaDonacionesArticulos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get metaDonacionDinero => $composableBuilder(
+    column: $table.metaDonacionDinero,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get articulosSolicitados => $composableBuilder(
+    column: $table.articulosSolicitados,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1593,6 +1867,26 @@ class $$JornadasLocalTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get aceptaDonacionesDinero => $composableBuilder(
+    column: $table.aceptaDonacionesDinero,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get aceptaDonacionesArticulos => $composableBuilder(
+    column: $table.aceptaDonacionesArticulos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get metaDonacionDinero => $composableBuilder(
+    column: $table.metaDonacionDinero,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get articulosSolicitados => $composableBuilder(
+    column: $table.articulosSolicitados,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -1667,6 +1961,26 @@ class $$JornadasLocalTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get aceptaDonacionesDinero => $composableBuilder(
+    column: $table.aceptaDonacionesDinero,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get aceptaDonacionesArticulos => $composableBuilder(
+    column: $table.aceptaDonacionesArticulos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get metaDonacionDinero => $composableBuilder(
+    column: $table.metaDonacionDinero,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get articulosSolicitados => $composableBuilder(
+    column: $table.articulosSolicitados,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -1719,6 +2033,10 @@ class $$JornadasLocalTableTableManager
                 Value<int?> cupoVoluntarios = const Value.absent(),
                 Value<String> estado = const Value.absent(),
                 Value<String> estadoProgreso = const Value.absent(),
+                Value<bool> aceptaDonacionesDinero = const Value.absent(),
+                Value<bool> aceptaDonacionesArticulos = const Value.absent(),
+                Value<double?> metaDonacionDinero = const Value.absent(),
+                Value<String?> articulosSolicitados = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> syncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -1737,6 +2055,10 @@ class $$JornadasLocalTableTableManager
                 cupoVoluntarios: cupoVoluntarios,
                 estado: estado,
                 estadoProgreso: estadoProgreso,
+                aceptaDonacionesDinero: aceptaDonacionesDinero,
+                aceptaDonacionesArticulos: aceptaDonacionesArticulos,
+                metaDonacionDinero: metaDonacionDinero,
+                articulosSolicitados: articulosSolicitados,
                 createdAt: createdAt,
                 syncedAt: syncedAt,
                 rowid: rowid,
@@ -1757,6 +2079,10 @@ class $$JornadasLocalTableTableManager
                 Value<int?> cupoVoluntarios = const Value.absent(),
                 Value<String> estado = const Value.absent(),
                 Value<String> estadoProgreso = const Value.absent(),
+                Value<bool> aceptaDonacionesDinero = const Value.absent(),
+                Value<bool> aceptaDonacionesArticulos = const Value.absent(),
+                Value<double?> metaDonacionDinero = const Value.absent(),
+                Value<String?> articulosSolicitados = const Value.absent(),
                 required DateTime createdAt,
                 Value<DateTime?> syncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -1775,6 +2101,10 @@ class $$JornadasLocalTableTableManager
                 cupoVoluntarios: cupoVoluntarios,
                 estado: estado,
                 estadoProgreso: estadoProgreso,
+                aceptaDonacionesDinero: aceptaDonacionesDinero,
+                aceptaDonacionesArticulos: aceptaDonacionesArticulos,
+                metaDonacionDinero: metaDonacionDinero,
+                articulosSolicitados: articulosSolicitados,
                 createdAt: createdAt,
                 syncedAt: syncedAt,
                 rowid: rowid,

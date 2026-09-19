@@ -26,7 +26,12 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
   final _direccionReferenciaController = TextEditingController();
   final _cupoController = TextEditingController();
   final _herramientaController = TextEditingController();
+  final _metaDonacionController = TextEditingController();
+  final _articuloSolicitadoController = TextEditingController();
   final List<String> _herramientasNecesarias = [];
+  final List<String> _articulosSolicitados = [];
+  bool _aceptaDonacionesDinero = false;
+  bool _aceptaDonacionesArticulos = false;
 
   String _categoriaSeleccionada = 'Limpieza';
   final List<String> _categorias = ['Baches', 'Limpieza', 'Reforestación', 'Pintura', 'Otro'];
@@ -77,6 +82,12 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
         _cupoController.text = j.cupoVoluntarios.toString();
       }
       _herramientasNecesarias.addAll(j.herramientasNecesarias);
+      _aceptaDonacionesDinero = j.aceptaDonacionesDinero;
+      _aceptaDonacionesArticulos = j.aceptaDonacionesArticulos;
+      if (j.metaDonacionDinero != null) {
+        _metaDonacionController.text = j.metaDonacionDinero.toString();
+      }
+      _articulosSolicitados.addAll(j.articulosSolicitados);
       _isLoadingLocation = false;
     } else {
       _obtenerUbicacionActual();
@@ -91,6 +102,8 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
     _direccionReferenciaController.dispose();
     _cupoController.dispose();
     _herramientaController.dispose();
+    _metaDonacionController.dispose();
+    _articuloSolicitadoController.dispose();
     super.dispose();
   }
 
@@ -100,6 +113,16 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
       setState(() {
         _herramientasNecesarias.add(texto);
         _herramientaController.clear();
+      });
+    }
+  }
+
+  void _agregarArticuloSolicitado() {
+    final texto = _articuloSolicitadoController.text.trim();
+    if (texto.isNotEmpty && !_articulosSolicitados.contains(texto)) {
+      setState(() {
+        _articulosSolicitados.add(texto);
+        _articuloSolicitadoController.clear();
       });
     }
   }
@@ -210,6 +233,14 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
         cupo = int.tryParse(_cupoController.text.trim());
       }
 
+      bool aceptaDinero = _aceptaDonacionesDinero;
+      bool aceptaArticulos = _aceptaDonacionesArticulos;
+      double? metaDinero;
+      if (aceptaDinero && _metaDonacionController.text.trim().isNotEmpty) {
+        metaDinero = double.tryParse(_metaDonacionController.text.trim());
+      }
+      List<String> articulos = aceptaArticulos ? List.from(_articulosSolicitados) : [];
+
       if (widget.jornadaParaEditar != null) {
         final jornadaActualizada = Jornada(
           id: widget.jornadaParaEditar!.id,
@@ -229,6 +260,10 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
           estado: widget.jornadaParaEditar!.estado,
           estadoProgreso: widget.jornadaParaEditar!.estadoProgreso,
           herramientasNecesarias: _herramientasNecesarias,
+          aceptaDonacionesDinero: aceptaDinero,
+          aceptaDonacionesArticulos: aceptaArticulos,
+          metaDonacionDinero: metaDinero,
+          articulosSolicitados: articulos,
           createdAt: widget.jornadaParaEditar!.createdAt,
         );
 
@@ -259,6 +294,10 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
               direccionReferencia: _direccionReferenciaController.text.trim(),
               cupoVoluntarios: cupo,
               herramientasNecesarias: _herramientasNecesarias,
+              aceptaDonacionesDinero: aceptaDinero,
+              aceptaDonacionesArticulos: aceptaArticulos,
+              metaDonacionDinero: metaDinero,
+              articulosSolicitados: articulos,
             );
 
         if (!mounted) return;
@@ -494,24 +533,109 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              if (_herramientasNecesarias.isNotEmpty)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: _herramientasNecesarias.map((herramienta) {
-                    return InputChip(
-                      label: Text(herramienta),
-                      backgroundColor: const Color(0xFF2E7D32).withValues(alpha: 0.1),
-                      labelStyle: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
-                      deleteIcon: const Icon(Icons.close, size: 16, color: Color(0xFF2E7D32)),
-                      onDeleted: () {
-                        setState(() {
-                          _herramientasNecesarias.remove(herramienta);
-                        });
-                      },
-                    );
-                  }).toList(),
-                ),
+               if (_herramientasNecesarias.isNotEmpty)
+                 Wrap(
+                   spacing: 8,
+                   runSpacing: 4,
+                   children: _herramientasNecesarias.map((herramienta) {
+                     return InputChip(
+                       label: Text(herramienta),
+                       backgroundColor: const Color(0xFF2E7D32).withValues(alpha: 0.1),
+                       labelStyle: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
+                       deleteIcon: const Icon(Icons.close, size: 16, color: Color(0xFF2E7D32)),
+                       onDeleted: () {
+                         setState(() {
+                           _herramientasNecesarias.remove(herramienta);
+                         });
+                       },
+                     );
+                   }).toList(),
+                 ),
+               const SizedBox(height: 24),
+               const Text(
+                 'Donaciones para la Jornada',
+                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
+               ),
+               const SizedBox(height: 4),
+               const Text(
+                 'Configura si esta iniciativa acepta apoyo económico o de insumos.',
+                 style: TextStyle(fontSize: 13, color: Colors.grey),
+               ),
+               const SizedBox(height: 12),
+               SwitchListTile(
+                 title: const Text('Aceptar donaciones de dinero', style: TextStyle(fontWeight: FontWeight.w600)),
+                 subtitle: const Text('Permite que los voluntarios aporten fondos monetarios'),
+                 value: _aceptaDonacionesDinero,
+                 activeThumbColor: const Color(0xFF2E7D32),
+                 contentPadding: EdgeInsets.zero,
+                 onChanged: (val) => setState(() => _aceptaDonacionesDinero = val),
+               ),
+               if (_aceptaDonacionesDinero) ...[
+                 const SizedBox(height: 8),
+                 TextFormField(
+                   controller: _metaDonacionController,
+                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                   decoration: const InputDecoration(
+                     labelText: 'Meta de donación en dinero (opcional)',
+                     prefixIcon: Icon(Icons.attach_money, color: Color(0xFF2E7D32)),
+                   ),
+                 ),
+                 const SizedBox(height: 12),
+               ],
+               SwitchListTile(
+                 title: const Text('Aceptar donaciones de artículos/insumos', style: TextStyle(fontWeight: FontWeight.w600)),
+                 subtitle: const Text('Solicita artículos específicos o generales para la causa'),
+                 value: _aceptaDonacionesArticulos,
+                 activeThumbColor: const Color(0xFF2E7D32),
+                 contentPadding: EdgeInsets.zero,
+                 onChanged: (val) => setState(() => _aceptaDonacionesArticulos = val),
+               ),
+               if (_aceptaDonacionesArticulos) ...[
+                 const SizedBox(height: 8),
+                 Row(
+                   children: [
+                     Expanded(
+                       child: TextFormField(
+                         controller: _articuloSolicitadoController,
+                         decoration: const InputDecoration(
+                           labelText: 'Artículo solicitado (ej. Guantes, Palas)',
+                           prefixIcon: Icon(Icons.inventory_2_outlined, color: Color(0xFF2E7D32)),
+                         ),
+                         onFieldSubmitted: (_) => _agregarArticuloSolicitado(),
+                       ),
+                     ),
+                     const SizedBox(width: 8),
+                     IconButton.filled(
+                       onPressed: _agregarArticuloSolicitado,
+                       icon: const Icon(Icons.add),
+                       style: IconButton.styleFrom(
+                         backgroundColor: const Color(0xFF2E7D32),
+                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                         padding: const EdgeInsets.all(14),
+                       ),
+                     ),
+                   ],
+                 ),
+                 const SizedBox(height: 12),
+                 if (_articulosSolicitados.isNotEmpty)
+                   Wrap(
+                     spacing: 8,
+                     runSpacing: 4,
+                     children: _articulosSolicitados.map((articulo) {
+                       return InputChip(
+                         label: Text(articulo),
+                         backgroundColor: const Color(0xFF2E7D32).withValues(alpha: 0.1),
+                         labelStyle: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
+                         deleteIcon: const Icon(Icons.close, size: 16, color: Color(0xFF2E7D32)),
+                         onDeleted: () {
+                           setState(() {
+                             _articulosSolicitados.remove(articulo);
+                           });
+                         },
+                       );
+                     }).toList(),
+                   ),
+               ],
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isSubmitting ? null : _publicarJornada,

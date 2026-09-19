@@ -3,6 +3,7 @@ import '../repositories/inscripcion_repository.dart';
 import '../models/jornada.dart';
 import 'jornada_controller.dart';
 import '../local_db/database_provider.dart';
+import '../services/notification_service.dart';
 
 final inscripcionRepositoryProvider = Provider<InscripcionRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
@@ -21,6 +22,11 @@ class InscripcionController extends AsyncNotifier<void> {
     state = await AsyncValue.guard(() async {
       final repo = ref.read(inscripcionRepositoryProvider);
       await repo.inscribirse(jornadaId, voluntarioId);
+      try {
+        final jornadaRepo = ref.read(jornadaRepositoryProvider);
+        final jornada = await jornadaRepo.obtenerJornadaPorId(jornadaId);
+        await NotificationService().programarRecordatorioJornada(jornada);
+      } catch (_) {}
       // Forzar sincronización si hay conexión
       ref.read(syncServiceProvider).sincronizarPendientes();
     });
@@ -32,6 +38,7 @@ class InscripcionController extends AsyncNotifier<void> {
     state = await AsyncValue.guard(() async {
       final repo = ref.read(inscripcionRepositoryProvider);
       await repo.cancelarInscripcion(jornadaId, voluntarioId);
+      await NotificationService().cancelarRecordatorio(jornadaId);
       ref.read(syncServiceProvider).sincronizarPendientes();
     });
   }
