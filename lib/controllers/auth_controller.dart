@@ -28,6 +28,18 @@ class AuthController {
     }
   }
 
+  // Iniciar sesión o registrarse con Google OAuth
+  Future<void> signInWithGoogle() async {
+    try {
+      await _supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'com.causapp.causapp://login-callback',
+      );
+    } catch (e) {
+      throw 'Error al iniciar sesión con Google: $e';
+    }
+  }
+
   // Registrarse con email y contraseña
   Future<void> signUp({required String email, required String password}) async {
     try {

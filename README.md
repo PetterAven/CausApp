@@ -4,48 +4,22 @@ CausApp es una aplicación móvil y web desarrollada en Flutter y Supabase para 
 
 ---
 
-## 🗺️ Configuración de Google Maps (Solución al problema del Mapa)
+## 🗺️ OpenStreetMap (100% Gratis sin API Keys)
 
-Para que los mapas funcionen correctamente en dispositivos físicos y emuladores, es necesario configurar una **API Key válida de Google Maps**:
-
-### 1. Android (`android/app/src/main/AndroidManifest.xml`)
-Reemplaza `TU_API_KEY_DE_GOOGLE_MAPS` con tu clave de API de Google Maps dentro del bloque `<application>`:
-```xml
-<meta-data
-    android:name="com.google.android.geo.API_KEY"
-    android:value="TU_API_KEY_REAL_AQUI" />
-```
-
-### 2. iOS (`ios/Runner/AppDelegate.swift`)
-Importa GoogleMaps y provee la API Key en el método de inicio:
-```swift
-import Flutter
-import UIKit
-import GoogleMaps
-
-@main
-@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
-  override func application(
-    _ application: UIApplication,
-    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-  ) -> Bool {
-    GMSServices.provideAPIKey("TU_API_KEY_REAL_AQUI")
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-  }
-  ...
-}
-```
+CausApp utiliza **OpenStreetMap** a través de los paquetes `flutter_map` y `latlong2`, lo que permite mostrar mapas interactivos de alta calidad, marcadores de jornadas y geolocalización sin necesidad de configurar claves de API de pago ni restricciones de Google Maps.
 
 ---
 
-## ✨ Mejoras de Interfaz (UI/UX)
-- **Tema Material 3 moderno**: Paleta de colores optimizada con tonos verde esmeralda (`#2E7D32`), tarjetas con sombras suaves y esquinas redondeadas.
+## ✨ Mejoras de Interfaz (UI/UX) y Características
+- **Tema Material 3 esmeralda (#2E7D32)**: Paleta de colores optimizada, tarjetas con sombras suaves y esquinas redondeadas.
+- **Fondo Animado Sutil (`AnimatedBackground`)**: Animación performante y elegante basada en `CustomPainter` con tonos verdes suaves.
+- **Estructura de Donaciones (UI + Supabase)**: Módulo de donaciones sin pasarela de pago real, preparado para integración futura con Stripe / PayPal.
 - **Pantallas rediseñadas**:
   - `LoginScreen`: Tarjetas limpias, avatares e indicadores de carga fluidos.
   - `MapaJornadasScreen`: Filtros superiores deslizables (`ChoiceChip`) y tarjetas flotantes de detalle.
   - `CrearJornadaScreen`: Formulario estructurado con validaciones y vista previa del mapa interactivo.
   - `MisJornadasScreen`: Pestañas organizadas entre jornadas en las que estás inscrito y las que organizas.
-  - `PerfilScreen`: Perfil de usuario moderno con acceso directo a creación y cierre de sesión.
+  - `PerfilScreen`: Perfil de usuario moderno con acceso directo a creación, donación y cierre de sesión.
 
 ---
 

@@ -134,6 +134,7 @@ class InscripcionRepository {
             cupoVoluntarios: row.cupoVoluntarios,
             estado: row.estado,
             estadoProgreso: row.estadoProgreso,
+            herramientasNecesarias: const [],
             createdAt: row.createdAt,
           ));
         }

@@ -29,8 +29,9 @@ class JornadaRepository {
          direccionReferencia: row.direccionReferencia ?? '',
          cupoVoluntarios: row.cupoVoluntarios,
          estado: row.estado,
-         estadoProgreso: row.estadoProgreso,
-         createdAt: row.createdAt,
+          estadoProgreso: row.estadoProgreso,
+          herramientasNecesarias: const [],
+          createdAt: row.createdAt,
        )).toList();
 
       // 2. Intentar fetch de Supabase
@@ -92,6 +93,7 @@ class JornadaRepository {
           cupoVoluntarios: match.cupoVoluntarios,
           estado: match.estado,
           estadoProgreso: match.estadoProgreso,
+          herramientasNecesarias: const [],
           createdAt: match.createdAt,
         );
       }
@@ -141,6 +143,7 @@ class JornadaRepository {
         cupoVoluntarios: row.cupoVoluntarios,
         estado: row.estado,
         estadoProgreso: row.estadoProgreso,
+        herramientasNecesarias: const [],
         createdAt: row.createdAt,
       )).toList();
     }

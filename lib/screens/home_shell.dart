@@ -6,7 +6,7 @@ import 'recursos_screen.dart';
 import 'perfil_screen.dart';
 import 'crear_jornada_screen.dart';
 import '../local_db/database_provider.dart';
-import '../widgets/satisfaccion_prompt.dart';
+import '../widgets/animated_background.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
@@ -18,11 +18,7 @@ class HomeShell extends ConsumerStatefulWidget {
 class _HomeShellState extends ConsumerState<HomeShell> {
   int _currentIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    SatisfaccionPrompt.mostrarSiEsOportuno(context);
-  }
+
 
   final List<Widget> _screens = [
     const MapaJornadasScreen(),
@@ -41,8 +37,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final pendingCount = syncStatusAsync.valueOrNull ?? 0;
 
     return Scaffold(
-      body: Column(
-        children: [
+      body: AnimatedBackground(
+        child: Column(
+          children: [
           if (isOffline)
             Container(
               width: double.infinity,
@@ -80,6 +77,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             child: _screens[_currentIndex],
           ),
         ],
+      ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

@@ -16,6 +16,7 @@ class Jornada {
   final int? cupoVoluntarios; // null = sin límite
   final String estado; // 'activa', 'cancelada', 'finalizada'
   final String estadoProgreso; // 'pendiente', 'en_proceso', 'completada'
+  final List<String> herramientasNecesarias;
   final DateTime createdAt;
 
   const Jornada({
@@ -33,27 +34,31 @@ class Jornada {
     this.cupoVoluntarios,
     required this.estado,
     required this.estadoProgreso,
+    this.herramientasNecesarias = const [],
     required this.createdAt,
   });
 
   // Constructor para crear una Jornada desde un mapa JSON (Supabase)
   factory Jornada.fromJson(Map<String, dynamic> json) {
     return Jornada(
-      id: json['id'].toString(),
-      organizadorId: json['organizador_id'].toString(),
-      titulo: json['titulo'] as String,
-      categoria: json['categoria'] as String,
+      id: json['id']?.toString() ?? '',
+      organizadorId: json['organizador_id']?.toString() ?? '',
+      titulo: json['titulo'] as String? ?? '',
+      categoria: json['categoria'] as String? ?? 'Limpieza',
       categoriaPersonalizada: json['categoria_personalizada'] as String?,
-      descripcion: json['descripcion'] as String,
-      fecha: json['fecha'] as String,
-      hora: json['hora'] as String,
-      latitud: (json['latitud'] as num).toDouble(),
-      longitud: (json['longitud'] as num).toDouble(),
-      direccionReferencia: json['direccion_referencia'] as String,
+      descripcion: json['descripcion'] as String? ?? '',
+      fecha: json['fecha'] as String? ?? '',
+      hora: json['hora'] as String? ?? '',
+      latitud: (json['latitud'] as num?)?.toDouble() ?? 0.0,
+      longitud: (json['longitud'] as num?)?.toDouble() ?? 0.0,
+      direccionReferencia: json['direccion_referencia'] as String? ?? '',
       cupoVoluntarios: json['cupo_voluntarios'] as int?,
       estado: json['estado'] as String? ?? 'activa',
       estadoProgreso: json['estado_progreso'] as String? ?? 'pendiente',
-      createdAt: DateTime.parse(json['created_at'] as String),
+      herramientasNecesarias: json['herramientas_necesarias'] != null
+          ? List<String>.from((json['herramientas_necesarias'] as List).map((e) => e.toString()))
+          : [],
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : DateTime.now(),
     );
   }
 
@@ -73,6 +78,7 @@ class Jornada {
       'cupo_voluntarios': cupoVoluntarios,
       'estado': estado,
       'estado_progreso': estadoProgreso,
+      'herramientas_necesarias': herramientasNecesarias,
     };
   }
 
@@ -91,6 +97,7 @@ class Jornada {
     int? cupoVoluntarios,
     String? estado,
     String? estadoProgreso,
+    List<String>? herramientasNecesarias,
     DateTime? createdAt,
   }) {
     return Jornada(
@@ -108,6 +115,7 @@ class Jornada {
       cupoVoluntarios: cupoVoluntarios ?? this.cupoVoluntarios,
       estado: estado ?? this.estado,
       estadoProgreso: estadoProgreso ?? this.estadoProgreso,
+      herramientasNecesarias: herramientasNecesarias ?? this.herramientasNecesarias,
       createdAt: createdAt ?? this.createdAt,
     );
   }

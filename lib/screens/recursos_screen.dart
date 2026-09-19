@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/recurso_controller.dart';
 import '../widgets/skeleton_loader.dart';
+import '../widgets/animated_background.dart';
 import 'publicar_recurso_screen.dart';
 import 'detalle_recurso_screen.dart';
 
@@ -45,7 +46,8 @@ class RecursosScreen extends ConsumerWidget {
         backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
       ),
-      body: recursosAsync.when(
+      body: AnimatedBackground(
+        child: recursosAsync.when(
         data: (recursos) {
           if (recursos.isEmpty) {
             return Center(
@@ -160,6 +162,7 @@ class RecursosScreen extends ConsumerWidget {
         },
         loading: () => const SkeletonList(),
         error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.red))),
+      ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

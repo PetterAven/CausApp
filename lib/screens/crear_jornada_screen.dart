@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/jornada_controller.dart';
 import '../models/jornada.dart';
+import '../widgets/mapa_jornadas_widget.dart';
+import '../widgets/animated_background.dart';
 
 class CrearJornadaScreen extends ConsumerStatefulWidget {
   final Jornada? jornadaParaEditar;
@@ -22,6 +25,8 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
   final _categoriaPersonalizadaController = TextEditingController();
   final _direccionReferenciaController = TextEditingController();
   final _cupoController = TextEditingController();
+  final _herramientaController = TextEditingController();
+  final List<String> _herramientasNecesarias = [];
 
   String _categoriaSeleccionada = 'Limpieza';
   final List<String> _categorias = ['Baches', 'Limpieza', 'Reforestación', 'Pintura', 'Otro'];
@@ -30,7 +35,7 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
   TimeOfDay? _horaSeleccionada;
 
   LatLng _ubicacionSeleccionada = const LatLng(19.432608, -99.133209);
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
   bool _isLoadingLocation = true;
   bool _isSubmitting = false;
 
@@ -71,6 +76,7 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
       if (j.cupoVoluntarios != null) {
         _cupoController.text = j.cupoVoluntarios.toString();
       }
+      _herramientasNecesarias.addAll(j.herramientasNecesarias);
       _isLoadingLocation = false;
     } else {
       _obtenerUbicacionActual();
@@ -84,7 +90,18 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
     _categoriaPersonalizadaController.dispose();
     _direccionReferenciaController.dispose();
     _cupoController.dispose();
+    _herramientaController.dispose();
     super.dispose();
+  }
+
+  void _agregarHerramienta() {
+    final texto = _herramientaController.text.trim();
+    if (texto.isNotEmpty && !_herramientasNecesarias.contains(texto)) {
+      setState(() {
+        _herramientasNecesarias.add(texto);
+        _herramientaController.clear();
+      });
+    }
   }
 
   Future<void> _obtenerUbicacionActual() async {
@@ -115,9 +132,7 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
         _isLoadingLocation = false;
       });
 
-      _mapController?.animateCamera(
-        CameraUpdate.newLatLngZoom(_ubicacionSeleccionada, 15),
-      );
+      _mapController.move(_ubicacionSeleccionada, 15);
     } catch (e) {
       setState(() => _isLoadingLocation = false);
     }
@@ -164,6 +179,7 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
   Future<void> _publicarJornada() async {
     if (!_formKey.currentState!.validate()) return;
     if (_fechaSeleccionada == null || _horaSeleccionada == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor selecciona fecha y hora de la jornada.')),
       );
@@ -172,6 +188,7 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
 
     final user = ref.read(currentUserProvider);
     if (user == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Debes iniciar sesión para publicar una jornada.')),
       );
@@ -211,21 +228,21 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
           cupoVoluntarios: cupo,
           estado: widget.jornadaParaEditar!.estado,
           estadoProgreso: widget.jornadaParaEditar!.estadoProgreso,
+          herramientasNecesarias: _herramientasNecesarias,
           createdAt: widget.jornadaParaEditar!.createdAt,
         );
 
         await ref.read(jornadaControllerProvider.notifier).actualizarJornada(jornadaActualizada);
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('¡Jornada actualizada exitosamente!'),
-              backgroundColor: Color(0xFF2E7D32),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          Navigator.pop(context);
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Jornada actualizada exitosamente!'),
+            backgroundColor: Color(0xFF2E7D32),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.pop(context);
       } else {
         await ref.read(jornadaControllerProvider.notifier).crearJornada(
               organizadorId: user.id,
@@ -241,25 +258,29 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
               longitud: _ubicacionSeleccionada.longitude,
               direccionReferencia: _direccionReferenciaController.text.trim(),
               cupoVoluntarios: cupo,
+              herramientasNecesarias: _herramientasNecesarias,
             );
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('¡Jornada publicada exitosamente!'),
-              backgroundColor: Color(0xFF2E7D32),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          Navigator.pop(context);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al publicar: ${e.toString()}'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('¡Jornada publicada exitosamente!'),
+            backgroundColor: Color(0xFF2E7D32),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
+        Navigator.pop(context);
       }
+    } catch (e, stackTrace) {
+      debugPrint('Error al publicar jornada: $e\n$stackTrace');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al publicar: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -275,9 +296,10 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
         backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
+      body: AnimatedBackground(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -390,28 +412,31 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
                   borderRadius: BorderRadius.circular(16),
                   child: _isLoadingLocation
                       ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
-                      : GoogleMap(
-                          initialCameraPosition: CameraPosition(
-                            target: _ubicacionSeleccionada,
-                            zoom: 15,
-                          ),
-                          onMapCreated: (controller) => _mapController = controller,
-                          onCameraMove: (position) {
-                            _ubicacionSeleccionada = position.target;
-                          },
-                          myLocationEnabled: true,
-                          myLocationButtonEnabled: true,
-                          zoomControlsEnabled: false,
-                          markers: {
-                            Marker(
-                              markerId: const MarkerId('ubicacion_jornada'),
-                              position: _ubicacionSeleccionada,
-                              draggable: true,
-                              onDragEnd: (newPosition) {
-                                setState(() => _ubicacionSeleccionada = newPosition);
+                      : Stack(
+                          children: [
+                            MapaJornadasWidget(
+                              mapController: _mapController,
+                              initialCenter: _ubicacionSeleccionada,
+                              zoom: 15,
+                              onPositionChanged: (camera, hasGesture) {
+                                if (hasGesture) {
+                                  setState(() {
+                                    _ubicacionSeleccionada = camera.center;
+                                  });
+                                }
                               },
                             ),
-                          },
+                            const Center(
+                              child: Padding(
+                                padding: EdgeInsets.only(bottom: 32),
+                                child: Icon(
+                                  Icons.location_pin,
+                                  color: Color(0xFF2E7D32),
+                                  size: 48,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                 ),
               ),
@@ -425,7 +450,7 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
                 validator: (value) => value == null || value.isEmpty ? 'Campo obligatorio' : null,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+               TextFormField(
                 controller: _cupoController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
@@ -433,6 +458,60 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
                   prefixIcon: Icon(Icons.group_outlined, color: Color(0xFF2E7D32)),
                 ),
               ),
+              const SizedBox(height: 24),
+              const Text(
+                'Herramientas o Insumos Necesarios',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Agrega los materiales que los voluntarios deberían llevar (ej. Palas, Guantes).',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _herramientaController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre de la herramienta o insumo',
+                        prefixIcon: Icon(Icons.handyman_outlined, color: Color(0xFF2E7D32)),
+                      ),
+                      onFieldSubmitted: (_) => _agregarHerramienta(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    onPressed: _agregarHerramienta,
+                    icon: const Icon(Icons.add),
+                    style: IconButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E7D32),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.all(14),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (_herramientasNecesarias.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: _herramientasNecesarias.map((herramienta) {
+                    return InputChip(
+                      label: Text(herramienta),
+                      backgroundColor: const Color(0xFF2E7D32).withValues(alpha: 0.1),
+                      labelStyle: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
+                      deleteIcon: const Icon(Icons.close, size: 16, color: Color(0xFF2E7D32)),
+                      onDeleted: () {
+                        setState(() {
+                          _herramientasNecesarias.remove(herramienta);
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isSubmitting ? null : _publicarJornada,
@@ -452,9 +531,10 @@ class _CrearJornadaScreenState extends ConsumerState<CrearJornadaScreen> {
                       ),
               ),
               const SizedBox(height: 24),
-            ],
-          ),
-        ),
+             ],
+           ),
+         ),
+       ),
       ),
     );
   }

@@ -31,6 +31,7 @@ final jornadasStreamProvider = StreamProvider<List<Jornada>>((ref) {
     cupoVoluntarios: row.cupoVoluntarios,
     estado: row.estado,
     estadoProgreso: row.estadoProgreso,
+    herramientasNecesarias: const [],
     createdAt: row.createdAt,
   )).toList());
 });
@@ -65,6 +66,7 @@ class JornadaController extends AsyncNotifier<List<Jornada>> {
     required double longitud,
     required String direccionReferencia,
     int? cupoVoluntarios,
+    List<String> herramientasNecesarias = const [],
   }) async {
     final repository = ref.read(jornadaRepositoryProvider);
     
@@ -85,6 +87,7 @@ class JornadaController extends AsyncNotifier<List<Jornada>> {
         cupoVoluntarios: cupoVoluntarios,
         estado: 'activa',
         estadoProgreso: 'pendiente',
+        herramientasNecesarias: herramientasNecesarias,
         createdAt: DateTime.now(),
       );
 

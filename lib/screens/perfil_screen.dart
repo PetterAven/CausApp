@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import '../controllers/auth_controller.dart';
 import 'crear_jornada_screen.dart';
 import 'editar_perfil_screen.dart';
+import 'donar_screen.dart';
+import '../widgets/animated_background.dart';
 
 class PerfilScreen extends ConsumerStatefulWidget {
   const PerfilScreen({super.key});
@@ -117,9 +119,10 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
-          : SingleChildScrollView(
+      body: AnimatedBackground(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
+            : SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -242,6 +245,25 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                        ),
                      ),
                    ),
+                   const SizedBox(height: 16),
+                   SizedBox(
+                     width: double.infinity,
+                     child: ElevatedButton.icon(
+                       onPressed: () {
+                         Navigator.push(
+                           context,
+                           MaterialPageRoute(builder: (context) => const DonarScreen()),
+                         );
+                       },
+                       icon: const Icon(Icons.favorite, color: Colors.white),
+                       label: const Text('Hacer una Donación / Apoyar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                       style: ElevatedButton.styleFrom(
+                         backgroundColor: Colors.pink.shade700,
+                         padding: const EdgeInsets.symmetric(vertical: 16),
+                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                       ),
+                     ),
+                   ),
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
@@ -266,9 +288,10 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
+                 ],
+               ),
+             ),
+           ),
     );
   }
 }

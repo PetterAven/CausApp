@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:share_plus/share_plus.dart';
 import '../controllers/auth_controller.dart';
@@ -9,8 +10,12 @@ import '../controllers/inscripcion_controller.dart';
 import '../models/jornada.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/estado_progreso_badge.dart';
+import '../widgets/mapa_jornadas_widget.dart';
+import '../widgets/animated_background.dart';
+import '../widgets/satisfaccion_prompt.dart';
 import 'crear_jornada_screen.dart';
 import 'recursos_jornada_screen.dart';
+import 'donar_screen.dart';
 
 class MapaJornadasScreen extends ConsumerStatefulWidget {
   const MapaJornadasScreen({super.key});
@@ -20,7 +25,7 @@ class MapaJornadasScreen extends ConsumerStatefulWidget {
 }
 
 class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
   LatLng _initialPosition = const LatLng(19.432608, -99.133209);
   bool _isLoadingLocation = true;
   String? _categoriaFiltroSeleccionada; // null = Todas
@@ -56,9 +61,7 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
         _isLoadingLocation = false;
       });
 
-      _mapController?.animateCamera(
-        CameraUpdate.newLatLngZoom(_initialPosition, 14),
-      );
+      _mapController.move(_initialPosition, 14);
     } catch (e) {
       setState(() => _isLoadingLocation = false);
     }
@@ -83,41 +86,71 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
     final jornadasAsync = ref.watch(jornadaControllerProvider);
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Mapa de Google Maps con manejo de errores / API Key faltante
+      body: AnimatedBackground(
+        child: Stack(
+          children: [
+          // Mapa de OpenStreetMap con FlutterMap
           _isLoadingLocation
               ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
               : jornadasAsync.when(
                   data: (jornadas) {
-                    final jornadasFiltradas = (_categoriaFiltroSeleccionada == null || _categoriaFiltroSeleccionada == 'Todas')
-                        ? jornadas
-                        : jornadas.where((j) => j.categoria == _categoriaFiltroSeleccionada).toList();
+                    try {
+                      final jornadasFiltradas = (_categoriaFiltroSeleccionada == null || _categoriaFiltroSeleccionada == 'Todas')
+                          ? jornadas
+                          : jornadas.where((j) => j.categoria == _categoriaFiltroSeleccionada).toList();
 
-                    final Set<Marker> markers = jornadasFiltradas.map((jornada) {
-                      return Marker(
-                        markerId: MarkerId(jornada.id),
-                        position: LatLng(jornada.latitud, jornada.longitud),
-                        infoWindow: InfoWindow(
-                          title: jornada.titulo,
-                          snippet: '${jornada.categoria} • ${jornada.fecha}',
-                        ),
-                        onTap: () => _mostrarDetalleJornada(context, jornada),
-                      );
-                    }).toSet();
+                      final List<Marker> markers = [];
+                      for (var jornada in jornadasFiltradas) {
+                        try {
+                          markers.add(
+                            Marker(
+                              point: LatLng(jornada.latitud, jornada.longitud),
+                              width: 44,
+                              height: 44,
+                              child: GestureDetector(
+                                onTap: () => _mostrarDetalleJornada(context, jornada),
+                                child: const Icon(
+                                  Icons.location_pin,
+                                  color: Color(0xFF2E7D32),
+                                  size: 44,
+                                ),
+                              ),
+                            ),
+                          );
+                        } catch (_) {}
+                      }
 
-                    return GoogleMap(
-                      initialCameraPosition: CameraPosition(
-                        target: _initialPosition,
+                      return MapaJornadasWidget(
+                        mapController: _mapController,
+                        initialCenter: _initialPosition,
                         zoom: 14,
-                      ),
-                      onMapCreated: (controller) => _mapController = controller,
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: true,
-                      mapToolbarEnabled: false,
-                      zoomControlsEnabled: false,
-                      markers: markers,
-                    );
+                        markers: markers,
+                      );
+                    } catch (e) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.map_outlined, size: 64, color: Colors.grey),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Error al renderizar el mapa: ${e.toString()}',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.grey, fontSize: 14, height: 1.4),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () => ref.read(jornadaControllerProvider.notifier).recargar(),
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Reintentar'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
                   },
                   loading: () => const SkeletonList(),
                   error: (e, st) => Center(
@@ -128,10 +161,10 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
                         children: [
                           const Icon(Icons.map_outlined, size: 64, color: Colors.grey),
                           const SizedBox(height: 16),
-                          const Text(
-                            'Nota sobre el Mapa:\nAsegúrate de configurar tu API Key de Google Maps en AndroidManifest.xml e Info.plist.',
+                          Text(
+                            'Error al cargar las jornadas en el mapa: ${e.toString()}',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey, fontSize: 14, height: 1.4),
+                            style: const TextStyle(color: Colors.grey, fontSize: 14, height: 1.4),
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton.icon(
@@ -289,6 +322,7 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
             ),
           ),
         ],
+      ),
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 65),
@@ -554,6 +588,26 @@ class _JornadaBottomsheetContent extends ConsumerWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DonarScreen(jornada: jornada),
+                ),
+              );
+            },
+            icon: const Icon(Icons.favorite, size: 18, color: Colors.white),
+            label: const Text('Donar / Apoyar esta Jornada', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.pink.shade700,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
+          ),
           const SizedBox(height: 16),
           if (user != null) ...[
             estaInscritoAsync.when(
@@ -610,6 +664,9 @@ class _JornadaBottomsheetContent extends ConsumerWidget {
       onTap: () async {
         try {
           await ref.read(jornadaControllerProvider.notifier).actualizarEstadoProgreso(jornada.id, estadoVal);
+          if (estadoVal == 'completada' && context.mounted) {
+            SatisfaccionPrompt.verificarYMostrarSiProcede(context, ref);
+          }
           ref.invalidate(jornadasStreamProvider);
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(

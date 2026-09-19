@@ -7,6 +7,8 @@ import '../controllers/jornada_controller.dart';
 import '../models/jornada.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/estado_progreso_badge.dart';
+import '../widgets/animated_background.dart';
+import '../widgets/satisfaccion_prompt.dart';
 import 'crear_jornada_screen.dart';
 
 class MisJornadasScreen extends ConsumerWidget {
@@ -18,20 +20,22 @@ class MisJornadasScreen extends ConsumerWidget {
 
     if (user == null) {
       return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.lock_outline, size: 64, color: Colors.grey),
-                const SizedBox(height: 16),
-                const Text(
-                  'Inicia sesión para ver tus jornadas.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500),
-                ),
-              ],
+        body: AnimatedBackground(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.lock_outline, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Inicia sesión para ver tus jornadas.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -59,11 +63,15 @@ class MisJornadasScreen extends ConsumerWidget {
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
+        body: AnimatedBackground(
+          child: TabBarView(
+            children: [
             // Pestaña 1: Jornadas inscritas
             inscritasAsync.when(
               data: (jornadas) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  SatisfaccionPrompt.verificarYMostrarSiProcede(context, ref);
+                });
                 if (jornadas.isEmpty) {
                   return Center(
                     child: Padding(
@@ -99,6 +107,9 @@ class MisJornadasScreen extends ConsumerWidget {
             // Pestaña 2: Jornadas organizadas
             organizadasAsync.when(
               data: (jornadas) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  SatisfaccionPrompt.verificarYMostrarSiProcede(context, ref);
+                });
                 if (jornadas.isEmpty) {
                   return Center(
                     child: Padding(
@@ -132,6 +143,7 @@ class MisJornadasScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -195,6 +207,9 @@ class _JornadaItemCard extends ConsumerWidget {
                     onSelected: (nuevoEstado) async {
                       try {
                         await ref.read(jornadaControllerProvider.notifier).actualizarEstadoProgreso(jornada.id, nuevoEstado);
+                        if (nuevoEstado == 'completada' && context.mounted) {
+                          SatisfaccionPrompt.verificarYMostrarSiProcede(context, ref);
+                        }
                         ref.invalidate(jornadasOrganizadasProvider(userId));
                         ref.invalidate(jornadasStreamProvider);
                         if (context.mounted) {

@@ -2,15 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../controllers/auth_controller.dart';
+import '../repositories/encuesta_repository.dart';
 
 class SatisfaccionPrompt extends ConsumerWidget {
   const SatisfaccionPrompt({super.key});
 
-  static void mostrarSiEsOportuno(BuildContext context) {
-    // Verificar que no se muestre al abrir por primera vez en la sesión actual
-    // Usamos un Future.delayed para no interrumpir el renderizado inicial
-    Future.delayed(const Duration(seconds: 4), () {
-      if (context.mounted) {
+  static bool _yaMostradaEstaSesion = false;
+
+  static Future<void> verificarYMostrarSiProcede(BuildContext context, WidgetRef ref) async {
+    if (_yaMostradaEstaSesion) return;
+
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+
+    try {
+      final repo = EncuestaRepository();
+      final currentCount = await repo.contarJornadasCompletadas(user.id);
+      if (currentCount == 0) return;
+
+      final estadoMap = await repo.obtenerEstado(user.id);
+
+      final lastShownAtStr = estadoMap?['last_shown_at'] as String?;
+      final lastShownAt = lastShownAtStr != null ? DateTime.parse(lastShownAtStr) : null;
+      final lastCountAtShown = estadoMap?['last_completed_jornada_count_at_shown'] as int? ?? 0;
+
+      bool debeMostrar = false;
+
+      if (lastShownAt == null) {
+        if (currentCount >= 1) {
+          debeMostrar = true;
+        }
+      } else {
+        final diasPasados = DateTime.now().difference(lastShownAt).inDays;
+        final hayNuevaJornada = currentCount > lastCountAtShown;
+
+        if (diasPasados >= 90 && hayNuevaJornada) {
+          debeMostrar = true;
+        }
+      }
+
+      if (debeMostrar && context.mounted) {
+        _yaMostradaEstaSesion = true;
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
@@ -21,7 +53,9 @@ class SatisfaccionPrompt extends ConsumerWidget {
           builder: (context) => const SatisfaccionPrompt(),
         );
       }
-    });
+    } catch (_) {
+      // Ignorar errores de red
+    }
   }
 
   Future<void> _guardarFeedback(BuildContext context, WidgetRef ref, int valor) async {
@@ -29,11 +63,23 @@ class SatisfaccionPrompt extends ConsumerWidget {
       final user = ref.read(currentUserProvider);
       final supabase = Supabase.instance.client;
 
-      await supabase.from('feedback_satisfaccion').insert({
-        'usuario_id': user?.id,
-        'valor': valor,
-        'fecha': DateTime.now().toIso8601String().split('T').first,
-      });
+      if (user != null) {
+        await supabase.from('feedback_satisfaccion').insert({
+          'usuario_id': user.id,
+          'valor': valor,
+          'fecha': DateTime.now().toIso8601String().split('T').first,
+        });
+
+        final repo = EncuestaRepository();
+        final currentCount = await repo.contarJornadasCompletadas(user.id);
+        await repo.guardarEstado(
+          userId: user.id,
+          lastShownAt: DateTime.now(),
+          countAtShown: currentCount,
+          respondida: true,
+          descartada: false,
+        );
+      }
 
       if (context.mounted) {
         Navigator.pop(context);
@@ -55,6 +101,26 @@ class SatisfaccionPrompt extends ConsumerWidget {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _descartarEncuesta(BuildContext context, WidgetRef ref) async {
+    try {
+      final user = ref.read(currentUserProvider);
+      if (user != null) {
+        final repo = EncuestaRepository();
+        final currentCount = await repo.contarJornadasCompletadas(user.id);
+        await repo.guardarEstado(
+          userId: user.id,
+          lastShownAt: DateTime.now(),
+          countAtShown: currentCount,
+          respondida: false,
+          descartada: true,
+        );
+      }
+    } catch (_) {}
+    if (context.mounted) {
+      Navigator.pop(context);
     }
   }
 
@@ -108,9 +174,9 @@ class SatisfaccionPrompt extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => _descartarEncuesta(context, ref),
             child: const Text(
-              'Quizás luego',
+              'Ahora no',
               style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
