@@ -13,6 +13,7 @@ import '../widgets/estado_progreso_badge.dart';
 import '../widgets/mapa_jornadas_widget.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/satisfaccion_prompt.dart';
+import '../widgets/tips_ambiental_carousel.dart';
 import 'crear_jornada_screen.dart';
 import 'recursos_jornada_screen.dart';
 import 'donar_screen.dart';
@@ -29,6 +30,8 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
   LatLng _initialPosition = const LatLng(19.432608, -99.133209);
   bool _isLoadingLocation = true;
   String? _categoriaFiltroSeleccionada; // null = Todas
+  double? _radioKmMaximo; // null = Sin límite de radio
+  final List<double?> _radiosDisponibles = [null, 5.0, 10.0, 25.0, 50.0];
 
   final List<String> _categoriasFiltro = ['Todas', 'Baches', 'Limpieza', 'Reforestación', 'Pintura', 'Otro'];
 
@@ -95,24 +98,70 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
               : jornadasAsync.when(
                   data: (jornadas) {
                     try {
-                      final jornadasFiltradas = (_categoriaFiltroSeleccionada == null || _categoriaFiltroSeleccionada == 'Todas')
-                          ? jornadas
-                          : jornadas.where((j) => j.categoria == _categoriaFiltroSeleccionada).toList();
+                      final jornadasFiltradas = jornadas.where((j) {
+                        final matchCategoria = (_categoriaFiltroSeleccionada == null || _categoriaFiltroSeleccionada == 'Todas') ||
+                            (j.categoria == _categoriaFiltroSeleccionada);
+                        if (!matchCategoria) return false;
+
+                        if (_radioKmMaximo != null) {
+                          final double distanciaMeters = Geolocator.distanceBetween(
+                            _initialPosition.latitude,
+                            _initialPosition.longitude,
+                            j.latitud,
+                            j.longitud,
+                          );
+                          final double distanciaKm = distanciaMeters / 1000;
+                          if (distanciaKm > _radioKmMaximo!) return false;
+                        }
+
+                        return true;
+                      }).toList();
 
                       final List<Marker> markers = [];
                       for (var jornada in jornadasFiltradas) {
                         try {
+                          final double distanciaMeters = Geolocator.distanceBetween(
+                            _initialPosition.latitude,
+                            _initialPosition.longitude,
+                            jornada.latitud,
+                            jornada.longitud,
+                          );
+                          final double distanciaKm = distanciaMeters / 1000;
+
                           markers.add(
                             Marker(
                               point: LatLng(jornada.latitud, jornada.longitud),
-                              width: 44,
-                              height: 44,
+                              width: 90,
+                              height: 64,
                               child: GestureDetector(
                                 onTap: () => _mostrarDetalleJornada(context, jornada),
-                                child: const Icon(
-                                  Icons.location_pin,
-                                  color: Color(0xFF2E7D32),
-                                  size: 44,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black87,
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.2),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        '${distanciaKm.toStringAsFixed(1)} km',
+                                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.location_pin,
+                                      color: Color(0xFF2E7D32),
+                                      size: 40,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -227,11 +276,72 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
                     ),
                   );
                 },
+               ),
+             ),
+           ),
+
+          // Carrusel de tips ambientales y de movilidad urbana
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 68,
+            left: 0,
+            right: 0,
+            child: const TipsAmbientalCarousel(),
+          ),
+
+          // Filtro de Radio / Cercanía GPS
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 215,
+            left: 16,
+            right: 16,
+            child: Container(
+              height: 42,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(21),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _radiosDisponibles.length,
+                itemBuilder: (context, index) {
+                  final radio = _radiosDisponibles[index];
+                  final isSelected = _radioKmMaximo == radio;
+                  final label = radio == null ? 'Radio: Todos' : '≤ ${radio.toInt()} km';
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 5.0),
+                    child: ChoiceChip(
+                      label: Text(label),
+                      selected: isSelected,
+                      selectedColor: const Color(0xFF2E7D32),
+                      backgroundColor: Colors.grey.shade100,
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : Colors.grey.shade800,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      showCheckmark: false,
+                      onSelected: (selected) {
+                        setState(() {
+                          _radioKmMaximo = selected ? radio : null;
+                        });
+                      },
+                    ),
+                  );
+                },
               ),
             ),
           ),
 
-          // Tarjeta flotante inferior de jornada cercana (estilo referencia)
+           // Tarjeta flotante inferior de jornada cercana (estilo referencia)
           Positioned(
             bottom: 16,
             left: 16,

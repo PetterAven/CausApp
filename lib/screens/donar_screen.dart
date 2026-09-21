@@ -89,10 +89,11 @@ class _DonarScreenState extends ConsumerState<DonarScreen> with SingleTickerProv
 
       final supabase = Supabase.instance.client;
       await supabase.from('donaciones').insert({
-        'donante_id': user.id,
+        'usuario_id': user.id,
         if (widget.jornada != null) 'jornada_id': widget.jornada!.id,
         'tipo': 'dinero',
         'monto': monto,
+        'metodo_pago': _metodoPago,
         'estado': 'pendiente',
       });
 
@@ -162,11 +163,12 @@ class _DonarScreenState extends ConsumerState<DonarScreen> with SingleTickerProv
     try {
       final supabase = Supabase.instance.client;
       await supabase.from('donaciones').insert({
-        'donante_id': user.id,
+        'usuario_id': user.id,
         if (widget.jornada != null) 'jornada_id': widget.jornada!.id,
         'tipo': 'articulo',
         'articulo_descripcion': descripcion,
         'cantidad': cantidad,
+        'metodo_pago': 'articulo',
         'estado': 'pendiente',
       });
 

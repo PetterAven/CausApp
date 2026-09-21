@@ -122,6 +122,7 @@ class JornadaRepository {
           .from('jornadas')
           .select()
           .eq('organizador_id', organizadorId)
+          .neq('estado', 'cancelada')
           .order('created_at', ascending: false);
       
       final jornadas = (response as List)
@@ -131,7 +132,10 @@ class JornadaRepository {
       return jornadas;
     } catch (e) {
       final local = await _db.obtenerJornadasLocal();
-      return local.where((r) => r.organizadorId == organizadorId).map((row) => _jornadaFromLocal(row)).toList();
+      return local
+          .where((r) => r.organizadorId == organizadorId && r.estado != 'cancelada')
+          .map((row) => _jornadaFromLocal(row))
+          .toList();
     }
   }
 

@@ -81,13 +81,13 @@ class NotificationService {
 
       final notificationId = jornada.id.hashCode;
 
-      await flutterLocalNotificationsPlugin.zonedSchedule(
+       await flutterLocalNotificationsPlugin.zonedSchedule(
         notificationId,
         '¡Tu jornada es mañana!',
         '${jornada.titulo} — mañana a las ${jornada.hora} en ${jornada.direccionReferencia.isNotEmpty ? jornada.direccionReferencia : 'Punto de encuentro'}',
         tzDateTime,
         details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexact,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
       );

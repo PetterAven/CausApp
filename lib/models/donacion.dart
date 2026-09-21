@@ -5,8 +5,11 @@ class Donacion {
   final String id;
   final String usuarioId;
   final String? jornadaId; // Opcional, si es donación directa a una jornada
-  final double monto;
-  final String metodoPago; // 'tarjeta', 'transferencia', 'qr'
+  final String tipo; // 'dinero', 'articulo'
+  final double? monto;
+  final String? articuloDescripcion;
+  final int? cantidad;
+  final String metodoPago; // 'tarjeta', 'transferencia', 'qr', 'articulo'
   final String estado; // 'pendiente', 'completada', 'fallida'
   final DateTime createdAt;
 
@@ -14,7 +17,10 @@ class Donacion {
     required this.id,
     required this.usuarioId,
     this.jornadaId,
-    required this.monto,
+    required this.tipo,
+    this.monto,
+    this.articuloDescripcion,
+    this.cantidad,
     required this.metodoPago,
     required this.estado,
     required this.createdAt,
@@ -25,7 +31,10 @@ class Donacion {
       id: json['id'].toString(),
       usuarioId: json['usuario_id'].toString(),
       jornadaId: json['jornada_id']?.toString(),
-      monto: (json['monto'] as num).toDouble(),
+      tipo: json['tipo'] as String? ?? 'dinero',
+      monto: json['monto'] != null ? (json['monto'] as num).toDouble() : null,
+      articuloDescripcion: json['articulo_descripcion'] as String?,
+      cantidad: json['cantidad'] as int?,
       metodoPago: json['metodo_pago'] as String? ?? 'tarjeta',
       estado: json['estado'] as String? ?? 'pendiente',
       createdAt: json['created_at'] != null
@@ -38,7 +47,10 @@ class Donacion {
     return {
       'usuario_id': usuarioId,
       if (jornadaId != null) 'jornada_id': jornadaId,
-      'monto': monto,
+      'tipo': tipo,
+      if (monto != null) 'monto': monto,
+      if (articuloDescripcion != null) 'articulo_descripcion': articuloDescripcion,
+      if (cantidad != null) 'cantidad': cantidad,
       'metodo_pago': metodoPago,
       'estado': estado,
     };
