@@ -10,6 +10,7 @@ import 'screens/terminos_screen.dart';
 import 'services/notification_service.dart';
 
 Future<void> main() async {
+  debugPrint('Startup start: ${DateTime.now()}');
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
@@ -18,12 +19,14 @@ Future<void> main() async {
   );
 
   await NotificationService().init();
+  debugPrint('NotificationService init done: ${DateTime.now()}');
 
   runApp(
     const ProviderScope(
       child: CausApp(),
     ),
   );
+  debugPrint('runApp called: ${DateTime.now()}');
 }
 
 class TerminosCheckWrapper extends ConsumerStatefulWidget {
@@ -70,11 +73,13 @@ class _TerminosCheckWrapperState extends ConsumerState<TerminosCheckWrapper> {
         return;
       }
 
-      _sincronizarNotificacionesPendientes(user.id);
-
       setState(() {
         _checking = false;
         _needsTerms = false;
+      });
+
+      Future.microtask(() {
+        _sincronizarNotificacionesPendientes(user.id);
       });
     } catch (_) {
       setState(() {

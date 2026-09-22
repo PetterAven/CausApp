@@ -7,11 +7,7 @@ import '../repositories/encuesta_repository.dart';
 class SatisfaccionPrompt extends ConsumerWidget {
   const SatisfaccionPrompt({super.key});
 
-  static bool _yaMostradaEstaSesion = false;
-
   static Future<void> verificarYMostrarSiProcede(BuildContext context, WidgetRef ref) async {
-    if (_yaMostradaEstaSesion) return;
-
     final user = ref.read(currentUserProvider);
     if (user == null) return;
 
@@ -22,13 +18,23 @@ class SatisfaccionPrompt extends ConsumerWidget {
 
       final estadoMap = await repo.obtenerEstado(user.id);
 
+      final respondida = estadoMap?['respondida'] as bool? ?? false;
+      final descartada = estadoMap?['descartada'] as bool? ?? false;
       final lastShownAtStr = estadoMap?['last_shown_at'] as String?;
       final lastShownAt = lastShownAtStr != null ? DateTime.parse(lastShownAtStr) : null;
       final lastCountAtShown = estadoMap?['last_completed_jornada_count_at_shown'] as int? ?? 0;
 
       bool debeMostrar = false;
 
-      if (lastShownAt == null) {
+      if (respondida) {
+        if (lastShownAt != null) {
+          final diasPasados = DateTime.now().difference(lastShownAt).inDays;
+          final hayNuevaJornada = currentCount > lastCountAtShown;
+          if (diasPasados >= 90 && hayNuevaJornada) {
+            debeMostrar = true;
+          }
+        }
+      } else if (lastShownAt == null) {
         if (currentCount >= 1) {
           debeMostrar = true;
         }
@@ -36,22 +42,37 @@ class SatisfaccionPrompt extends ConsumerWidget {
         final diasPasados = DateTime.now().difference(lastShownAt).inDays;
         final hayNuevaJornada = currentCount > lastCountAtShown;
 
-        if (diasPasados >= 90 && hayNuevaJornada) {
-          debeMostrar = true;
+        if (descartada) {
+          if (hayNuevaJornada || diasPasados >= 90) {
+            debeMostrar = true;
+          }
+        } else {
+          if (diasPasados >= 90 && hayNuevaJornada) {
+            debeMostrar = true;
+          }
         }
       }
 
       if (debeMostrar && context.mounted) {
-        _yaMostradaEstaSesion = true;
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.white,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          builder: (context) => const SatisfaccionPrompt(),
+        await repo.guardarEstado(
+          userId: user.id,
+          lastShownAt: DateTime.now(),
+          countAtShown: currentCount,
+          respondida: false,
+          descartada: false,
         );
+
+        if (context.mounted) {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.white,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            builder: (context) => const SatisfaccionPrompt(),
+          );
+        }
       }
     } catch (_) {
       // Ignorar errores de red

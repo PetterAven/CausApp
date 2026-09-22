@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/jornada.dart';
 import '../repositories/jornada_repository.dart';
@@ -118,13 +119,17 @@ class JornadaController extends AsyncNotifier<List<Jornada>> {
       );
 
       await repository.crearJornada(nuevaJornada);
-      try {
-        final list = await repository.obtenerJornadas();
-        final creada = list.where((j) => j.organizadorId == organizadorId && j.titulo == titulo).firstOrNull;
-        if (creada != null) {
-          await NotificationService().programarRecordatorioJornada(creada);
+      Future.microtask(() async {
+        try {
+          final list = await repository.obtenerJornadas();
+          final creada = list.where((j) => j.organizadorId == organizadorId && j.titulo == titulo).firstOrNull;
+          if (creada != null) {
+            await NotificationService().programarRecordatorioJornada(creada);
+          }
+        } catch (e) {
+          debugPrint('Error al programar notificación de nueva jornada: $e');
         }
-      } catch (_) {}
+      });
       return await repository.obtenerJornadas();
     });
   }
@@ -145,6 +150,14 @@ class JornadaController extends AsyncNotifier<List<Jornada>> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       await repository.actualizarJornada(jornada);
+      Future.microtask(() async {
+        try {
+          await NotificationService().cancelarRecordatorio(jornada.id);
+          await NotificationService().programarRecordatorioJornada(jornada);
+        } catch (e) {
+          debugPrint('Error al actualizar notificación de jornada: $e');
+        }
+      });
       return await repository.obtenerJornadas();
     });
   }
@@ -155,7 +168,13 @@ class JornadaController extends AsyncNotifier<List<Jornada>> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       await repository.eliminarJornada(id);
-      await NotificationService().cancelarRecordatorio(id);
+      Future.microtask(() async {
+        try {
+          await NotificationService().cancelarRecordatorio(id);
+        } catch (e) {
+          debugPrint('Error al cancelar notificación de jornada eliminada: $e');
+        }
+      });
       return await repository.obtenerJornadas();
     });
   }

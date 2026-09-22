@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -31,14 +32,22 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
   bool _isLoadingLocation = true;
   String? _categoriaFiltroSeleccionada; // null = Todas
   double? _radioKmMaximo; // null = Sin límite de radio
-  final List<double?> _radiosDisponibles = [null, 5.0, 10.0, 25.0, 50.0];
+  String _textoBusqueda = '';
+  Timer? _debounceTimer;
 
+  final List<double?> _radiosDisponibles = [null, 5.0, 10.0, 25.0, 50.0];
   final List<String> _categoriasFiltro = ['Todas', 'Baches', 'Limpieza', 'Reforestación', 'Pintura', 'Otro'];
 
   @override
   void initState() {
     super.initState();
     _obtenerUbicacionUsuario();
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _obtenerUbicacionUsuario() async {
@@ -84,6 +93,145 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
     );
   }
 
+  void _mostrarModalFiltros(BuildContext context) {
+    String? tempCategoria = _categoriaFiltroSeleccionada;
+    double? tempRadio = _radioKmMaximo;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateSheet) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Filtros de Búsqueda',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setStateSheet(() {
+                              tempCategoria = null;
+                              tempRadio = null;
+                            });
+                          },
+                          child: const Text('Limpiar', style: TextStyle(color: Colors.grey)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Categoría',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: _categoriasFiltro.map((cat) {
+                        final isSelected = (tempCategoria == null && cat == 'Todas') || (tempCategoria == cat);
+                        return ChoiceChip(
+                          label: Text(cat),
+                          selected: isSelected,
+                          selectedColor: const Color(0xFF2E7D32),
+                          backgroundColor: Colors.grey.shade100,
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.grey.shade800,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          showCheckmark: false,
+                          onSelected: (selected) {
+                            setStateSheet(() {
+                              tempCategoria = cat == 'Todas' ? null : cat;
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Radio de Distancia',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: _radiosDisponibles.map((radio) {
+                        final isSelected = tempRadio == radio;
+                        final label = radio == null ? 'Radio: Todos' : '≤ ${radio.toInt()} km';
+                        return ChoiceChip(
+                          label: Text(label),
+                          selected: isSelected,
+                          selectedColor: const Color(0xFF2E7D32),
+                          backgroundColor: Colors.grey.shade100,
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.grey.shade800,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          showCheckmark: false,
+                          onSelected: (selected) {
+                            setStateSheet(() {
+                              tempRadio = selected ? radio : null;
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _categoriaFiltroSeleccionada = tempCategoria;
+                          _radioKmMaximo = tempRadio;
+                        });
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2E7D32),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('Aplicar Filtros', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final jornadasAsync = ref.watch(jornadaControllerProvider);
@@ -112,6 +260,13 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
                           );
                           final double distanciaKm = distanciaMeters / 1000;
                           if (distanciaKm > _radioKmMaximo!) return false;
+                        }
+
+                        if (_textoBusqueda.trim().isNotEmpty) {
+                          final query = _textoBusqueda.toLowerCase();
+                          final matchTitulo = j.titulo.toLowerCase().contains(query);
+                          final matchDesc = j.descripcion.toLowerCase().contains(query);
+                          if (!matchTitulo && !matchDesc) return false;
                         }
 
                         return true;
@@ -227,58 +382,89 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
                   ),
                 ),
 
-          // Filtros por categoría superiores con diseño flotante elegante
+          // Barra de búsqueda superior y botón de filtros
           Positioned(
             top: MediaQuery.of(context).padding.top + 12,
             left: 16,
             right: 16,
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                 color: Colors.white.withValues(alpha: 0.95),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _categoriasFiltro.length,
-                itemBuilder: (context, index) {
-                  final cat = _categoriasFiltro[index];
-                  final isSelected = (_categoriaFiltroSeleccionada == null && cat == 'Todas') ||
-                      (_categoriaFiltroSeleccionada == cat);
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 6.0),
-                    child: ChoiceChip(
-                      label: Text(cat),
-                      selected: isSelected,
-                      selectedColor: const Color(0xFF2E7D32),
-                      backgroundColor: Colors.grey.shade100,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.grey.shade800,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      showCheckmark: false,
-                      onSelected: (selected) {
-                        setState(() {
-                          _categoriaFiltroSeleccionada = cat == 'Todas' ? null : cat;
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      onChanged: (value) {
+                        if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+                        _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+                          setState(() {
+                            _textoBusqueda = value;
+                          });
                         });
                       },
+                      decoration: InputDecoration(
+                        hintText: 'Buscar jornada...',
+                        hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                        prefixIcon: const Icon(Icons.search, color: Color(0xFF2E7D32)),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
                     ),
-                  );
-                },
-               ),
-             ),
-           ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Stack(
+                  children: [
+                    Container(
+                      height: 48,
+                      width: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: () => _mostrarModalFiltros(context),
+                        icon: const Icon(Icons.filter_list, color: Color(0xFF2E7D32)),
+                        tooltip: 'Filtros',
+                      ),
+                    ),
+                    if ((_categoriaFiltroSeleccionada != null && _categoriaFiltroSeleccionada != 'Todas') || _radioKmMaximo != null)
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF2E7D32),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
 
           // Carrusel de tips ambientales y de movilidad urbana
           Positioned(
@@ -286,59 +472,6 @@ class _MapaJornadasScreenState extends ConsumerState<MapaJornadasScreen> {
             left: 0,
             right: 0,
             child: const TipsAmbientalCarousel(),
-          ),
-
-          // Filtro de Radio / Cercanía GPS
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 215,
-            left: 16,
-            right: 16,
-            child: Container(
-              height: 42,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.95),
-                borderRadius: BorderRadius.circular(21),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _radiosDisponibles.length,
-                itemBuilder: (context, index) {
-                  final radio = _radiosDisponibles[index];
-                  final isSelected = _radioKmMaximo == radio;
-                  final label = radio == null ? 'Radio: Todos' : '≤ ${radio.toInt()} km';
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 5.0),
-                    child: ChoiceChip(
-                      label: Text(label),
-                      selected: isSelected,
-                      selectedColor: const Color(0xFF2E7D32),
-                      backgroundColor: Colors.grey.shade100,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.grey.shade800,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      showCheckmark: false,
-                      onSelected: (selected) {
-                        setState(() {
-                          _radioKmMaximo = selected ? radio : null;
-                        });
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
           ),
 
            // Tarjeta flotante inferior de jornada cercana (estilo referencia)

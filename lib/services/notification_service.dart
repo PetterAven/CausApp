@@ -12,6 +12,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
+  bool _permissionRequested = false;
 
   Future<void> init() async {
     if (_initialized) return;
@@ -28,12 +29,16 @@ class NotificationService {
 
     await flutterLocalNotificationsPlugin.initialize(initSettings);
 
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
-
     _initialized = true;
+
+    if (!_permissionRequested) {
+      _permissionRequested = true;
+      flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission()
+          .catchError((_) => null);
+    }
   }
 
   Future<void> programarRecordatorioJornada(Jornada jornada) async {
