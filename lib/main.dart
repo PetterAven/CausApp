@@ -163,13 +163,35 @@ class CausAppRoot extends ConsumerWidget {
         ),
       ),
       error: (error, stackTrace) => Scaffold(
+        backgroundColor: const Color(0xFFF4F7F6),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Text(
-              'Error al cargar la autenticación: $error',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.red, fontSize: 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.cloud_off, size: 64, color: Color(0xFF2E7D32)),
+                const SizedBox(height: 16),
+                const Text(
+                  'Sin conexión con el servidor',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'No se pudo conectar con Supabase. Verifica tu conexión a internet o el estado del proyecto.\n\nDetalle técnico: $error',
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    ref.invalidate(authStateProvider);
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Reintentar'),
+                ),
+              ],
             ),
           ),
         ),

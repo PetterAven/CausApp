@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'mapa_jornadas_screen.dart';
 import 'mis_jornadas_screen.dart';
-import 'recursos_screen.dart';
+import 'reportes_screen.dart';
 import 'perfil_screen.dart';
 import 'crear_jornada_screen.dart';
 import '../local_db/database_provider.dart';
@@ -23,7 +23,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   final List<Widget> _screens = [
     const MapaJornadasScreen(),
     const MisJornadasScreen(),
-    const RecursosScreen(),
+    const ReportesScreen(),
     const CrearJornadaScreen(),
     const PerfilScreen(),
   ];
@@ -99,9 +99,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             label: 'Mis Jornadas',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.handyman_outlined),
-            activeIcon: Icon(Icons.handyman),
-            label: 'Herramientas',
+            icon: Icon(Icons.report_problem_outlined),
+            activeIcon: Icon(Icons.report_problem),
+            label: 'Reportar',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_circle_outline),
